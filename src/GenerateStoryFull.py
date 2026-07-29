@@ -3,7 +3,7 @@ import time
 import random
 import unicodedata
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 try:
     from selenium import webdriver
@@ -52,14 +52,37 @@ COLUMN_ICONS = [
 ]
 
 DAY1_ALLOWED_HOURS = {
-    "10h30", "11h00", "12h00", "12h30","13h00",  "13h30", "14h00", 
-    "14h30", "15h00", "16h30", "16h00", "17h00", "18h00", "18h30",  "19h00", 
-    "19h30", "20h00", "21h00", "21h30", "22h00",  "22h30", "23h00"
+    "10h30", "11h00", "12h00", "12h30", "13h00", "13h30", "14h00", 
+    "14h30", "15h00",  "16h00",  "16h30", "17h00", "18h00", "18h30",  "19h00",
+    "19h30", "20h00", "21h00", "21h30",  "22h00",  "22h30", "23h00",
+    
 }
 
 DAY2_ALLOWED_HOURS = {
-    "06h00", "06h30", "07h00", "07h30", "08h00", "09h00", "09h30" , "10h00",
+    "06h00", "06h30",  "07h00", "07h30", "08h00", "09h00", "09h30",
+    "10h00",
 }
+
+
+# ==============================================================================
+# FONCTIONS LOGGING & FORMATAGE
+# ==============================================================================
+def log_step(step_title: str) -> None:
+    print("\n" + "=" * 80)
+    print(f"  {step_title}")
+    print("=" * 80)
+
+def log_substep(substep_title: str) -> None:
+    print(f"\n--- [{substep_title}] ---")
+
+def log_info(msg: str) -> None:
+    print(f"[INFO] {msg}")
+
+def log_warn(msg: str) -> None:
+    print(f"[WARN] {msg}")
+
+def log_err(msg: str) -> None:
+    print(f"[ERROR] {msg}")
 
 
 # ==============================================================================
@@ -100,23 +123,23 @@ def wait_for_dynamic_page(driver: webdriver.Chrome, timeout: int = 20, markers: 
 
     while time.time() - start_time < timeout:
         if driver.current_url != previous_url:
-            print(f"[DEBUG] Navigation : {previous_url} -> {driver.current_url}")
+            log_info(f"Navigation détectée : {previous_url} -> {driver.current_url}")
             return
 
         if any(page_contains_text(driver, marker) for marker in markers):
-            print("[DEBUG] Page dynamique prête.")
+            log_info("Page dynamique prête (marqueurs trouvés).")
             return
 
         try:
             if driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-horaires')]"):
-                print("[DEBUG] Boutons horaires détectés.")
+                log_info("Boutons .btn-horaires détectés dans le DOM.")
                 return
         except Exception:
             pass
 
         time.sleep(0.5)
 
-    print("[DEBUG] Timeout de l'attente dynamique.")
+    log_warn("Timeout lors de l'attente de la page dynamique.")
 
 
 def submit_login_form(driver: webdriver.Chrome, login_element, password_element) -> None:
@@ -126,10 +149,10 @@ def submit_login_form(driver: webdriver.Chrome, login_element, password_element)
     )
 
     if submit_buttons:
-        print("[DEBUG] Clic sur le bouton de connexion.")
+        log_info("Soumission du formulaire via clic sur le bouton Connexion.")
         submit_buttons[0].click()
     else:
-        print("[DEBUG] Pas de bouton trouvé, touche Entrée.")
+        log_info("Bouton de connexion non trouvé, soumission via touche Entrée.")
         password_element.send_keys(Keys.ENTER)
 
 
@@ -139,9 +162,9 @@ def close_popup_if_present(driver: webdriver.Chrome, timeout: int = 5) -> None:
             EC.element_to_be_clickable((By.XPATH, "//button[@type='button' and @class='close' and @data-dismiss='modal']"))
         )
         close_button.click()
-        print("[DEBUG] Popup fermée.")
+        log_info("Popup d'information fermée.")
     except Exception:
-        print("[DEBUG] Aucune popup à fermer.")
+        log_info("Aucune popup à fermer.")
 
 
 def click_reservation_div_if_present(driver: webdriver.Chrome, timeout: int = 2) -> None:
@@ -150,33 +173,33 @@ def click_reservation_div_if_present(driver: webdriver.Chrome, timeout: int = 2)
             EC.element_to_be_clickable((By.XPATH, "//div[.//a[contains(@href, \"javascript:myLoad('/prereservation.asp')\")]]"))
         )
         reservation_div.click()
-        print("[DEBUG] Conteneur 'Réserver' cliqué.")
+        log_info("Onglet/Conteneur 'Réserver' cliqué.")
     except Exception:
-        print("[DEBUG] Conteneur 'Réserver' non trouvé.")
+        log_warn("Conteneur 'Réserver' non trouvé.")
 
 
 def click_back_div_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/prereservation.asp'); }")
-        print("[DEBUG] Back exécuté via myLoad.")
+        log_info("Retour à l'accueil préréservation via myLoad.")
     except Exception as e:
-        print(f"[DEBUG] Erreur lors du clic retour : {e}")
+        log_err(f"Erreur lors de la réinitialisation de la vue retour : {e}")
 
 
 def click_reservation_double_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/reservation_capsule.asp?id_sport=2'); }")
-        print("[DEBUG] Navigation Terrains Doubles (id_sport=2) exécutée.")
+        log_info("Accès aux Terrains DOUBLES (id_sport=2).")
     except Exception as e:
-        print(f"[DEBUG] Erreur clic Doubles : {e}")
+        log_err(f"Erreur navigation Terrains Doubles : {e}")
 
 
 def click_reservation_single_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/reservation_capsule.asp?id_sport=7'); }")
-        print("[DEBUG] Navigation Terrain Simple (id_sport=7) exécutée.")
+        log_info("Accès au Terrain SIMPLE (id_sport=7).")
     except Exception as e:
-        print(f"[DEBUG] Erreur clic Simple : {e}")
+        log_err(f"Erreur navigation Terrain Simple : {e}")
 
 
 def get_choosepop_buttons_status(driver: webdriver.Chrome, timeout: int = 2) -> list[dict[str, str]]:
@@ -186,46 +209,48 @@ def get_choosepop_buttons_status(driver: webdriver.Chrome, timeout: int = 2) -> 
             lambda d: d.find_elements(By.XPATH, "//button[contains(@class, 'btn-horaires')]")
         )
     except Exception:
-        print("[DEBUG] Aucun bouton .btn-horaires trouvé dans le DOM.")
+        log_warn("Aucun bouton .btn-horaires trouvé dans la page.")
         return results
 
-    print(f"[DEBUG] Nombre de boutons .btn-horaires trouvés sur la page : {len(buttons)}")
+    log_info(f"Nombre total de créneaux bruts détectés dans le DOM : {len(buttons)}")
 
     for button in buttons:
         raw_label = (button.text or "").replace("\xa0", " ").strip()
         label = "\n".join(raw_label.splitlines()[:1]).strip()
         is_enabled = button.is_enabled()
         status = "available" if is_enabled else "unavailable"
+        
+        print(f"   ↳ [RAW SELENIUM] Horaire: '{label}' | IsEnabled: {is_enabled} -> Status: {status}")
         results.append({"LABEL": label, "STATUS": status})
 
     return results
 
 
 def click_tomorrow_time_element(driver: webdriver.Chrome) -> bool:
-    print("\n--- [DEBUG] RECHERCHE DE L'ÉLÉMENT DEMAIN ---")
+    log_substep("NAVIGATION VERs DEMAIN")
     try:
         xpath = "//time[contains(@class, 'icon') and not(contains(@class, 'active')) and not(contains(@class, 'iconWhite'))]"
         tomorrow_elements = driver.find_elements(By.XPATH, xpath)
 
         if not tomorrow_elements:
-            print("[DEBUG ERR] Impossible de trouver le bloc pour Demain.")
+            log_err("Impossible de localiser le sélecteur pour Demain.")
             return False
 
         target_el = tomorrow_elements[0]
         onclick_attr = target_el.get_attribute("onclick") or ""
-        print(f"[DEBUG] Élément Demain ciblé : text='{target_el.text.strip()}' | onclick='{onclick_attr}'")
+        log_info(f"Bloc Demain trouvé : texte='{target_el.text.strip()}' | onclick='{onclick_attr}'")
 
         if "viewD" in onclick_attr:
             driver.execute_script(onclick_attr)
-            print(f"[DEBUG] JS viewD exécuté avec succès : {onclick_attr}")
+            log_info("Basculement sur l'onglet Demain effectué via JavaScript viewD.")
             return True
         else:
             driver.execute_script("arguments[0].click();", target_el)
-            print("[DEBUG] Fallback clic JS exécuté.")
+            log_info("Basculement sur Demain effectué via clic classique.")
             return True
 
     except Exception as exc:
-        print(f"[DEBUG ERR] Erreur lors du basculement sur Demain : {exc}")
+        log_err(f"Exception lors du basculement sur la journée de Demain : {exc}")
         return False
 
 
@@ -241,7 +266,8 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
     data_single = []
 
     try:
-        print("\n--- [DEBUG] CONNEXION ET NAVIGATION INITIALE ---")
+        log_step("ÉTAPE 1/5 : CONNEXION ET NAVIGATION INITIALE")
+        log_info(f"Ouverture de l'URL : {url}")
         driver.get(url)
         time.sleep(2)
 
@@ -249,7 +275,7 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
         password_fields = driver.find_elements(By.NAME, "mot_de_passe")
 
         if not login_fields or not password_fields:
-            raise RuntimeError("Champs de connexion introuvables.")
+            raise RuntimeError("Formulaire de connexion inaccessible ou non trouvé.")
 
         login_fields[0].clear()
         login_fields[0].send_keys(login_value)
@@ -263,51 +289,59 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
         time.sleep(0.5)
 
         # ----------------------------------------------------------------------
-        # Execution 1 : DOUBLE
+        # Scraping : DOUBLES
         # ----------------------------------------------------------------------
-        print("\n--- [DEBUG] SCRAPING DOUBLES - PASSAGE 1 (Aujourd'hui) ---")
+        log_step("ÉTAPE 2/5 : SCRAPING - TERRAINS DOUBLES")
+        
+        log_substep("DOUBLES - Passage 1 : Aujourd'hui")
         click_reservation_double_if_present(driver)
         wait_for_dynamic_page(driver, timeout=3, markers=["nouvelle reservation", "reserver", "btn-horaires"])
         
-        raw_day1 = get_choosepop_buttons_status(driver)
-        print(f"[DEBUG] Boutons bruts extraits Jour 1 ({len(raw_day1)}) : {[x['LABEL'] for x in raw_day1]}")
+        raw_double_day1 = get_choosepop_buttons_status(driver)
+        filtered_double_day1 = [item for item in raw_double_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
+        data_double.extend(filtered_double_day1)
+        log_info(f"DOUBLES Jour 1 -> Reçus: {len(raw_double_day1)} | Conservés: {len(filtered_double_day1)}")
 
-        data_double = [item for item in raw_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
-
-        print("\n--- [DEBUG] SCRAPING DOUBLES - PASSAGE 2 (Demain) ---")
+        log_substep("DOUBLES - Passage 2 : Demain Matin")
         if click_tomorrow_time_element(driver):
             time.sleep(2.0)
-            raw_day2 = get_choosepop_buttons_status(driver)
-            morning_slots_day2 = [item for item in raw_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
-            data_double.extend(morning_slots_day2)
+            raw_double_day2 = get_choosepop_buttons_status(driver)
+            filtered_double_day2 = [item for item in raw_double_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
+            data_double.extend(filtered_double_day2)
+            log_info(f"DOUBLES Jour 2 -> Reçus: {len(raw_double_day2)} | Conservés: {len(filtered_double_day2)}")
         else:
-            print("[DEBUG ERR] Échec basculement sur Demain pour Doubles.")
+            log_err("Échec de la récupération pour le lendemain (DOUBLES).")
 
         click_back_div_if_present(driver)
         time.sleep(0.5)
 
         # ----------------------------------------------------------------------
-        # Execution 2 : SINGLE
+        # Scraping : SINGLE
         # ----------------------------------------------------------------------
-        print("\n--- [DEBUG] SCRAPING SIMPLE - PASSAGE 1 (Aujourd'hui) ---")
+        log_step("ÉTAPE 3/5 : SCRAPING - TERRAIN SIMPLE")
+        
+        log_substep("SIMPLE - Passage 1 : Aujourd'hui")
         click_reservation_single_if_present(driver)
         wait_for_dynamic_page(driver, timeout=4, markers=["nouvelle reservation", "reserver", "btn-horaires"])
         
         raw_single_day1 = get_choosepop_buttons_status(driver)
-        data_single = [item for item in raw_single_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
+        filtered_single_day1 = [item for item in raw_single_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
+        data_single.extend(filtered_single_day1)
+        log_info(f"SIMPLE Jour 1 -> Reçus: {len(raw_single_day1)} | Conservés: {len(filtered_single_day1)}")
 
-        print("\n--- [DEBUG] SCRAPING SIMPLE - PASSAGE 2 (Demain) ---")
+        log_substep("SIMPLE - Passage 2 : Demain Matin")
         if click_tomorrow_time_element(driver):
             time.sleep(2.0)
             raw_single_day2 = get_choosepop_buttons_status(driver)
-            morning_slots_single_day2 = [item for item in raw_single_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
-            data_single.extend(morning_slots_single_day2)
+            filtered_single_day2 = [item for item in raw_single_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
+            data_single.extend(filtered_single_day2)
+            log_info(f"SIMPLE Jour 2 -> Reçus: {len(raw_single_day2)} | Conservés: {len(filtered_single_day2)}")
         else:
-            print("[DEBUG ERR] Échec basculement sur Demain pour Simple.")
+            log_err("Échec de la récupération pour le lendemain (SIMPLE).")
 
     finally:
         driver.quit()
-        print(f"\n[DEBUG] Durée totale navigateur : {time.perf_counter() - t0:.2f}s")
+        log_info(f"Fermeture du navigateur. Temps total de scraping : {time.perf_counter() - t0:.2f}s")
 
     return data_double, data_single
 
@@ -394,8 +428,12 @@ def render_schedule_image(
     output_path: Path,
     bottom_title_text: str = "TERRAINS DOUBLES",
 ) -> None:
+    log_substep(f"RENDU VISUEL : {bottom_title_text}")
+    log_info(f"Fond sélectionné : {background_path.name}")
+    log_info(f"Fichier de sortie : {output_path.name}")
+
     if not background_path.exists():
-        print(f"[ERREUR] Image de fond introuvable : {background_path}")
+        log_err(f"Image d'arrière-plan introuvable : {background_path}")
         return
 
     base_img = Image.open(background_path).convert("RGBA")
@@ -470,7 +508,7 @@ def render_schedule_image(
     final_img = Image.alpha_composite(base_img, overlay)
     RES_FOLDER.mkdir(parents=True, exist_ok=True)
     final_img.convert("RGB").save(output_path, quality=95)
-    print(f"[SUCCÈS] Image enregistrée : {output_path}")
+    log_info(f"Image enregistrée avec succès -> {output_path}")
 
 
 # ==============================================================================
@@ -485,13 +523,25 @@ def main() -> None:
     login_value = sys.argv[1]
     password_value = sys.argv[2]
 
+    # Scraping des données via Selenium
     data_double, data_single = launch_and_fill(url, login_value, password_value)
 
-    # Grilles modèles
+    # Grille Modèle (Template)
+    template_items_single = [
+        ("11:00", ""), ("12:00", ""),
+        ("13:00", ""), ("14:00", ""),
+        ("15:00", ""), ("16:00", ""),
+        ("17:00", ""), ("18:00", ""), 
+        ("19:00", ""), ("20:00", ""), ("21:00", ""),
+        ("22:00", ""), ("23:00", ""), 
+        ("06:00", ""), ("07:00", ""), 
+        ("08:00", ""), ("09:00", ""),   ("10:00", ""), 
+    ]
+
     template_items_double = [
         ("10:30", ""), ("11:00", ""), ("12:00", ""),
         ("12:30", ""), ("13:30", ""), ("14:00", ""),
-        ("14:30", ""), ("15:00", ""), ("16:30", ""),
+        ("15:00", ""), ("16:30", ""),
         ("17:00", ""), ("18:00", ""), ("18:30", ""),
         ("19:30", ""), ("20:00", ""), ("21:00", ""),
         ("21:30", ""), ("22:30", ""), ("23:00", ""),
@@ -499,49 +549,35 @@ def main() -> None:
         ("08:00", ""), ("09:00", ""), ("09:30", ""),
     ]
 
-    template_items_single = [
-        ("11:00", ""), ("12:00", ""),
-        ("13:00", ""), ("14:00", ""), ("15:00", ""),
-        ("16:00", ""), ("17:00", ""), ("18:00", ""),
-        ("19:00", ""), ("20:00", ""), ("21:00", ""),
-        ("22:00", ""), ("23:00", ""), ("06:00", ""),
-        ("07:00", ""), ("08:00", ""), ("09:00", ""),
-        ("10:00", ""),
-    ]
-
-    # Mise à jour des grilles avec les données scrapées
+    log_step("ÉTAPE 4/5 : COMPILATION ET STRUCTURATION DES DONNÉES")
+    
+    # Injection des statuts scrapés dans le template
     schedule_items_double = update_schedule_items(template_items_double, data_double)
     schedule_items_single = update_schedule_items(template_items_single, data_single)
 
-# Affichage propre des données finales compilées
-    print("\n==================================================")
-    print("      DONNÉES FINALES - TERRAINS DOUBLES")
-    print("==================================================")
+    log_substep("DONNÉES FINALES INJECTÉES - TERRAINS DOUBLES")
     for hour, status in schedule_items_double:
-        print(f"  [{hour}] -> {status}")
+        print(f"   [{hour}] -> {status}")
 
-    print("\n==================================================")
-    print("      DONNÉES FINALES - TERRAIN SIMPLE")
-    print("==================================================")
+    log_substep("DONNÉES FINALES INJECTÉES - TERRAIN SIMPLE")
     for hour, status in schedule_items_single:
-        print(f"  [{hour}] -> {status}")
-    print("==================================================\n")
+        print(f"   [{hour}] -> {status}")
 
-
-# Choix de deux fonds d'écran différents
+    # Choix de 2 fonds distincts aléatoirement
+    log_step("ÉTAPE 5/5 : SÉLECTION DES FONDS ET GÉNÉRATION D'IMAGES")
     bck_images = list(BCK_FOLDER.glob("*.jpg")) + list(BCK_FOLDER.glob("*.png"))
     
     if len(bck_images) >= 2:
         bg_double, bg_single = random.sample(bck_images, 2)
+        log_info(f"Deux images de fond distinctes tirées au sort : '{bg_double.name}' et '{bg_single.name}'")
     elif len(bck_images) == 1:
         bg_double = bg_single = bck_images[0]
+        log_warn(f"Une seule image trouvée dans {BCK_FOLDER}. Utilisation du même fond.")
     else:
         bg_double = bg_single = BCK_FOLDER / "default.png"
+        log_warn("Aucune image de fond trouvée dans le dossier. Mode secours par défaut.")
 
-    print(f"[DEBUG] Fond sélectionné pour DOUBLES : {bg_double.name}")
-    print(f"[DEBUG] Fond sélectionné pour SIMPLE  : {bg_single.name}")
-
-    # Génération des images d'horaires
+    # Génération des 2 visuels
     render_schedule_image(
         background_path=bg_double,
         schedule_items=schedule_items_double,
@@ -555,6 +591,8 @@ def main() -> None:
         output_path=RES_FOLDER / "schedule_single.jpg",
         bottom_title_text="TERRAIN SIMPLE",
     )
+
+    log_step("TRAITEMENT TERMINÉ AVEC SUCCÈS")
 
 
 if __name__ == "__main__":
