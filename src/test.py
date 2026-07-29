@@ -1,9 +1,8 @@
 import sys
 import time
-import random
 import unicodedata
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageOps,ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageFilter
 
 try:
     from selenium import webdriver
@@ -28,9 +27,9 @@ IMG_FOLDER = Path.cwd().parent / "img/"
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
 COLOR_GOLD = (253, 202, 55)
+COLOR_BLUE = (33, 103, 187)
 COLOR_RED = (220, 50, 50)
 COLOR_DISABLED_BG = (44, 44, 44)
-COLOR_BLUE = (33, 103, 187)
 
 COLUMN_LABELS = ["MIDI", "APRES-MIDI", "SOIREE", "DEM. MATIN"]
 
@@ -51,9 +50,10 @@ COLUMN_ICONS = [
     "morning.png",
 ]
 
+
 DAY1_ALLOWED_HOURS = {
     "10h30", "11h00", "12h00", "12h30", "13h00", "13h30", "14h00", 
-    "14h30", "15h00",  "15h30",  "16h00",  "16h30", "17h00", "18h00", "18h30",  "19h00",
+    "14h30", "15h00",  "16h00",  "16h30", "17h00", "18h00", "18h30",  "19h00",
     "19h30", "20h00", "21h00", "21h30",  "22h00",  "22h30", "23h00",
     
 }
@@ -63,26 +63,6 @@ DAY2_ALLOWED_HOURS = {
     "10h00",
 }
 
-
-# ==============================================================================
-# FONCTIONS LOGGING & FORMATAGE
-# ==============================================================================
-def log_step(step_title: str) -> None:
-    print("\n" + "=" * 80)
-    print(f"  {step_title}")
-    print("=" * 80)
-
-def log_substep(substep_title: str) -> None:
-    print(f"\n--- [{substep_title}] ---")
-
-def log_info(msg: str) -> None:
-    print(f"[INFO] {msg}")
-
-def log_warn(msg: str) -> None:
-    print(f"[WARN] {msg}")
-
-def log_err(msg: str) -> None:
-    print(f"[ERROR] {msg}")
 
 
 # ==============================================================================
@@ -123,23 +103,23 @@ def wait_for_dynamic_page(driver: webdriver.Chrome, timeout: int = 20, markers: 
 
     while time.time() - start_time < timeout:
         if driver.current_url != previous_url:
-            log_info(f"Navigation détectée : {previous_url} -> {driver.current_url}")
+            print(f"[DEBUG] Navigation : {previous_url} -> {driver.current_url}")
             return
 
         if any(page_contains_text(driver, marker) for marker in markers):
-            log_info("Page dynamique prête (marqueurs trouvés).")
+            print("[DEBUG] Page dynamique prête.")
             return
 
         try:
             if driver.find_elements(By.XPATH, "//button[contains(@class, 'btn-horaires')]"):
-                log_info("Boutons .btn-horaires détectés dans le DOM.")
+                print("[DEBUG] Boutons horaires détectés.")
                 return
         except Exception:
             pass
 
         time.sleep(0.5)
 
-    log_warn("Timeout lors de l'attente de la page dynamique.")
+    print("[DEBUG] Timeout de l'attente dynamique.")
 
 
 def submit_login_form(driver: webdriver.Chrome, login_element, password_element) -> None:
@@ -149,10 +129,10 @@ def submit_login_form(driver: webdriver.Chrome, login_element, password_element)
     )
 
     if submit_buttons:
-        log_info("Soumission du formulaire via clic sur le bouton Connexion.")
+        print("[DEBUG] Clic sur le bouton de connexion.")
         submit_buttons[0].click()
     else:
-        log_info("Bouton de connexion non trouvé, soumission via touche Entrée.")
+        print("[DEBUG] Pas de bouton trouvé, touche Entrée.")
         password_element.send_keys(Keys.ENTER)
 
 
@@ -162,9 +142,9 @@ def close_popup_if_present(driver: webdriver.Chrome, timeout: int = 5) -> None:
             EC.element_to_be_clickable((By.XPATH, "//button[@type='button' and @class='close' and @data-dismiss='modal']"))
         )
         close_button.click()
-        log_info("Popup d'information fermée.")
+        print("[DEBUG] Popup fermée.")
     except Exception:
-        log_info("Aucune popup à fermer.")
+        print("[DEBUG] Aucune popup à fermer.")
 
 
 def click_reservation_div_if_present(driver: webdriver.Chrome, timeout: int = 2) -> None:
@@ -173,33 +153,33 @@ def click_reservation_div_if_present(driver: webdriver.Chrome, timeout: int = 2)
             EC.element_to_be_clickable((By.XPATH, "//div[.//a[contains(@href, \"javascript:myLoad('/prereservation.asp')\")]]"))
         )
         reservation_div.click()
-        log_info("Onglet/Conteneur 'Réserver' cliqué.")
+        print("[DEBUG] Conteneur 'Réserver' cliqué.")
     except Exception:
-        log_warn("Conteneur 'Réserver' non trouvé.")
+        print("[DEBUG] Conteneur 'Réserver' non trouvé.")
 
 
 def click_back_div_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/prereservation.asp'); }")
-        log_info("Retour à l'accueil préréservation via myLoad.")
+        print("[DEBUG] Back exécuté via myLoad.")
     except Exception as e:
-        log_err(f"Erreur lors de la réinitialisation de la vue retour : {e}")
+        print(f"[DEBUG] Erreur lors du clic retour : {e}")
 
 
 def click_reservation_double_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/reservation_capsule.asp?id_sport=2'); }")
-        log_info("Accès aux Terrains DOUBLES (id_sport=2).")
+        print("[DEBUG] Navigation Terrains Doubles (id_sport=2) exécutée.")
     except Exception as e:
-        log_err(f"Erreur navigation Terrains Doubles : {e}")
+        print(f"[DEBUG] Erreur clic Doubles : {e}")
 
 
 def click_reservation_single_if_present(driver: webdriver.Chrome, timeout: int = 10) -> None:
     try:
         driver.execute_script("if (window.myLoad) { window.myLoad('/reservation_capsule.asp?id_sport=7'); }")
-        log_info("Accès au Terrain SIMPLE (id_sport=7).")
+        print("[DEBUG] Navigation Terrain Simple (id_sport=7) exécutée.")
     except Exception as e:
-        log_err(f"Erreur navigation Terrain Simple : {e}")
+        print(f"[DEBUG] Erreur clic Simple : {e}")
 
 
 def get_choosepop_buttons_status(driver: webdriver.Chrome, timeout: int = 2) -> list[dict[str, str]]:
@@ -209,48 +189,46 @@ def get_choosepop_buttons_status(driver: webdriver.Chrome, timeout: int = 2) -> 
             lambda d: d.find_elements(By.XPATH, "//button[contains(@class, 'btn-horaires')]")
         )
     except Exception:
-        log_warn("Aucun bouton .btn-horaires trouvé dans la page.")
+        print("[DEBUG] Aucun bouton .btn-horaires trouvé dans le DOM.")
         return results
 
-    log_info(f"Nombre total de créneaux bruts détectés dans le DOM : {len(buttons)}")
+    print(f"[DEBUG] Nombre de boutons .btn-horaires trouvés sur la page : {len(buttons)}")
 
     for button in buttons:
         raw_label = (button.text or "").replace("\xa0", " ").strip()
         label = "\n".join(raw_label.splitlines()[:1]).strip()
         is_enabled = button.is_enabled()
         status = "available" if is_enabled else "unavailable"
-        
-        print(f"   ↳ [RAW SELENIUM] Horaire: '{label}' | IsEnabled: {is_enabled} -> Status: {status}")
         results.append({"LABEL": label, "STATUS": status})
 
     return results
 
 
 def click_tomorrow_time_element(driver: webdriver.Chrome) -> bool:
-    log_substep("NAVIGATION VERs DEMAIN")
+    print("\n--- [DEBUG] RECHERCHE DE L'ÉLÉMENT DEMAIN ---")
     try:
         xpath = "//time[contains(@class, 'icon') and not(contains(@class, 'active')) and not(contains(@class, 'iconWhite'))]"
         tomorrow_elements = driver.find_elements(By.XPATH, xpath)
 
         if not tomorrow_elements:
-            log_err("Impossible de localiser le sélecteur pour Demain.")
+            print("[DEBUG ERR] Impossible de trouver le bloc pour Demain.")
             return False
 
         target_el = tomorrow_elements[0]
         onclick_attr = target_el.get_attribute("onclick") or ""
-        log_info(f"Bloc Demain trouvé : texte='{target_el.text.strip()}' | onclick='{onclick_attr}'")
+        print(f"[DEBUG] Élément Demain ciblé : text='{target_el.text.strip()}' | onclick='{onclick_attr}'")
 
         if "viewD" in onclick_attr:
             driver.execute_script(onclick_attr)
-            log_info("Basculement sur l'onglet Demain effectué via JavaScript viewD.")
+            print(f"[DEBUG] JS viewD exécuté avec succès : {onclick_attr}")
             return True
         else:
             driver.execute_script("arguments[0].click();", target_el)
-            log_info("Basculement sur Demain effectué via clic classique.")
+            print("[DEBUG] Fallback clic JS exécuté.")
             return True
 
     except Exception as exc:
-        log_err(f"Exception lors du basculement sur la journée de Demain : {exc}")
+        print(f"[DEBUG ERR] Erreur lors du basculement sur Demain : {exc}")
         return False
 
 
@@ -266,8 +244,7 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
     data_single = []
 
     try:
-        log_step("ÉTAPE 1/5 : CONNEXION ET NAVIGATION INITIALE")
-        log_info(f"Ouverture de l'URL : {url}")
+        print("\n--- [DEBUG] CONNEXION ET NAVIGATION INITIALE ---")
         driver.get(url)
         time.sleep(2)
 
@@ -275,7 +252,7 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
         password_fields = driver.find_elements(By.NAME, "mot_de_passe")
 
         if not login_fields or not password_fields:
-            raise RuntimeError("Formulaire de connexion inaccessible ou non trouvé.")
+            raise RuntimeError("Champs de connexion introuvables.")
 
         login_fields[0].clear()
         login_fields[0].send_keys(login_value)
@@ -289,145 +266,83 @@ def launch_and_fill(url: str, login_value: str, password_value: str) -> tuple[li
         time.sleep(0.5)
 
         # ----------------------------------------------------------------------
-        # Scraping : DOUBLES
+        # Execution 1 : DOUBLE
         # ----------------------------------------------------------------------
-        log_step("ÉTAPE 2/5 : SCRAPING - TERRAINS DOUBLES")
-        
-        log_substep("DOUBLES - Passage 1 : Aujourd'hui")
+        print("\n--- [DEBUG] SCRAPING DOUBLES - PASSAGE 1 (Aujourd'hui) ---")
         click_reservation_double_if_present(driver)
         wait_for_dynamic_page(driver, timeout=3, markers=["nouvelle reservation", "reserver", "btn-horaires"])
         
-        raw_double_day1 = get_choosepop_buttons_status(driver)
-        filtered_double_day1 = [item for item in raw_double_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
-        data_double.extend(filtered_double_day1)
-        log_info(f"DOUBLES Jour 1 -> Reçus: {len(raw_double_day1)} | Conservés: {len(filtered_double_day1)}")
+        raw_day1 = get_choosepop_buttons_status(driver)
+        print(f"[DEBUG] Boutons bruts extraits Jour 1 ({len(raw_day1)}) : {[x['LABEL'] for x in raw_day1]}")
 
-        log_substep("DOUBLES - Passage 2 : Demain Matin")
+        data_double = [item for item in raw_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
+
+        print("\n--- [DEBUG] SCRAPING DOUBLES - PASSAGE 2 (Demain) ---")
         if click_tomorrow_time_element(driver):
             time.sleep(2.0)
-            raw_double_day2 = get_choosepop_buttons_status(driver)
-            filtered_double_day2 = [item for item in raw_double_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
-            data_double.extend(filtered_double_day2)
-            log_info(f"DOUBLES Jour 2 -> Reçus: {len(raw_double_day2)} | Conservés: {len(filtered_double_day2)}")
+            raw_day2 = get_choosepop_buttons_status(driver)
+            morning_slots_day2 = [item for item in raw_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
+            data_double.extend(morning_slots_day2)
         else:
-            log_err("Échec de la récupération pour le lendemain (DOUBLES).")
+            print("[DEBUG ERR] Échec basculement sur Demain pour Doubles.")
 
         click_back_div_if_present(driver)
         time.sleep(0.5)
 
         # ----------------------------------------------------------------------
-        # Scraping : SINGLE
+        # Execution 2 : SINGLE
         # ----------------------------------------------------------------------
-        log_step("ÉTAPE 3/5 : SCRAPING - TERRAIN SIMPLE")
-        
-        log_substep("SIMPLE - Passage 1 : Aujourd'hui")
+        print("\n--- [DEBUG] SCRAPING SIMPLE - PASSAGE 1 (Aujourd'hui) ---")
         click_reservation_single_if_present(driver)
         wait_for_dynamic_page(driver, timeout=4, markers=["nouvelle reservation", "reserver", "btn-horaires"])
         
         raw_single_day1 = get_choosepop_buttons_status(driver)
-        filtered_single_day1 = [item for item in raw_single_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
-        data_single.extend(filtered_single_day1)
-        log_info(f"SIMPLE Jour 1 -> Reçus: {len(raw_single_day1)} | Conservés: {len(filtered_single_day1)}")
+        data_single = [item for item in raw_single_day1 if item["LABEL"] in DAY1_ALLOWED_HOURS]
 
-        log_substep("SIMPLE - Passage 2 : Demain Matin")
+        print("\n--- [DEBUG] SCRAPING SIMPLE - PASSAGE 2 (Demain) ---")
         if click_tomorrow_time_element(driver):
             time.sleep(2.0)
             raw_single_day2 = get_choosepop_buttons_status(driver)
-            filtered_single_day2 = [item for item in raw_single_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
-            data_single.extend(filtered_single_day2)
-            log_info(f"SIMPLE Jour 2 -> Reçus: {len(raw_single_day2)} | Conservés: {len(filtered_single_day2)}")
+            morning_slots_single_day2 = [item for item in raw_single_day2 if item["LABEL"] in DAY2_ALLOWED_HOURS]
+            data_single.extend(morning_slots_single_day2)
         else:
-            log_err("Échec de la récupération pour le lendemain (SIMPLE).")
+            print("[DEBUG ERR] Échec basculement sur Demain pour Simple.")
 
     finally:
         driver.quit()
-        log_info(f"Fermeture du navigateur. Temps total de scraping : {time.perf_counter() - t0:.2f}s")
+        print(f"\n[DEBUG] Durée totale navigateur : {time.perf_counter() - t0:.2f}s")
 
     return data_double, data_single
 
 
 # ==============================================================================
-# MAPPING DE LA GRILLE & GENERATION PILLOW
+# FONCTIONS UTILITAIRES & RENDU PILLOW (DE GENERATERESAS)
 # ==============================================================================
-def load_best_font(font_names: list[str], size: int) -> ImageFont.FreeTypeFont:
-    for name in font_names:
-        font_path = FNT_FOLDER / name
-        if font_path.exists():
-            try:
-                return ImageFont.truetype(str(font_path), size)
-            except Exception:
-                pass
+def find_single_jpg(path: Path) -> Path:
+    jpg_files = sorted(path.glob("template_story_creneaux.jpg"))
+    if len(jpg_files) == 1:
+        return jpg_files[0]
+    raise FileNotFoundError(f"Fichier .jpg source introuvable dans {path}")
+
+
+def load_font(name: str | None, size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    if name:
+        try:
+            return ImageFont.truetype(FNT_FOLDER / name, size)
+        except Exception:
+            pass
+
+    candidates = PREFERRED_FONTS if bold else reversed(PREFERRED_FONTS)
+    for font_name in candidates:
+        try:
+            return ImageFont.truetype(FNT_FOLDER / font_name, size)
+        except Exception:
+            continue
+
     return ImageFont.load_default()
 
 
-def update_schedule_items(
-    base_schedule: list[tuple[str, str]], dynamic_data: list[dict[str, str]]
-) -> list[tuple[str, str]]:
-    status_map = {}
-    for item in dynamic_data:
-        label = item.get("LABEL", "").replace("h", ":").strip()
-        status_map[label] = item.get("STATUS", "unavailable")
-
-    updated_schedule = []
-    for hour, status in base_schedule:
-        if status == "ABSENT" or not hour:
-            updated_schedule.append((hour, "ABSENT"))
-        else:
-            fetched_status = status_map.get(hour)
-            if fetched_status == "available":
-                new_status = "DISPONIBLE"
-            elif fetched_status == "unavailable":
-                new_status = "INDISPONIBLE"
-            else:
-                new_status = status
-
-            updated_schedule.append((hour, new_status))
-
-    return updated_schedule
-
-
-def draw_slot_pill(
-    draw: ImageDraw.ImageDraw,
-    x: float,
-    y: float,
-    width: float,
-    height: float,
-    text: str,
-    status: str,
-    font: ImageFont.FreeTypeFont,
-) -> None:
-    radius = height / 2.0
-    rect = [x, y, x + width, y + height]
-
-    if status == "DISPONIBLE":
-        bg_color = COLOR_GOLD
-        text_color = COLOR_BLACK
-    else:
-        bg_color = COLOR_DISABLED_BG
-        text_color = COLOR_WHITE
-
-    draw.rounded_rectangle(rect, radius=radius, fill=bg_color)
-
-    if status == "INDISPONIBLE":
-        inner_margin = 3.0
-        inner_rect = [x + inner_margin, y + inner_margin, x + width - inner_margin, y + height - inner_margin]
-        inner_radius = max(1.0, radius - inner_margin)
-        draw.rounded_rectangle(inner_rect, radius=inner_radius, outline=COLOR_RED, width=3)
-
-    bbox = font.getbbox(text)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
-    tx = x + (width - text_w) / 2.0 - bbox[0]
-    ty = y + (height - text_h) / 2.0 - bbox[1]
-    draw.text((tx, ty), text, fill=text_color, font=font)
-
-def calculate_grid_metrics(
-    width: int, height: int, rows: int = 6, cols: int = 4
-) -> dict:
-    """
-    Calcule toutes les métriques géométriques pour la grille de créneaux.
-    Permet d'éviter la redondance des formules dans les fonctions de dessin.
-    """
+def calculate_grid_metrics(width: int, height: int, rows: int = 6, cols: int = 4) -> dict:
     top_margin = height * 0.45
     bottom_margin = height * 0.08
     left_margin = width * 0.07
@@ -451,10 +366,68 @@ def calculate_grid_metrics(
         "cols": cols,
     }
 
-def draw_schedule_grid(
-    image: Image.Image, schedule_items: list[tuple[str, str]], rows: int, cols: int
-) -> None:
-    """Dessine la grille complète : séparateurs, arrière-plans (squircles), en-têtes et textes (modifie l'image en place)."""
+
+def update_schedule_items(base_schedule: list[tuple[str, str]], dynamic_data: list[dict[str, str]]) -> list[tuple[str, str]]:
+    status_map = {}
+    for item in dynamic_data:
+        label = item.get("LABEL", "").replace("h", ":").strip()
+        status_map[label] = item.get("STATUS", "unavailable")
+
+    updated_schedule = []
+    for hour, status in base_schedule:
+        if status == "ABSENT" or not hour:
+            updated_schedule.append((hour, "ABSENT"))
+        else:
+            fetched_status = status_map.get(hour)
+            if fetched_status == "available":
+                new_status = "DISPONIBLE"
+            elif fetched_status == "unavailable":
+                new_status = "INDISPONIBLE"
+            else:
+                new_status = status
+
+            updated_schedule.append((hour, new_status))
+
+    return updated_schedule
+
+
+def add_header_logo(image: Image.Image, logo_path: Path, Title: str) -> None:
+    if not logo_path.exists():
+        print(f"Fichier Logo introuvable : {logo_path}")
+        return
+
+    logo = Image.open(logo_path).convert("RGBA")
+    max_height = int(image.height * 0.20)
+    logo = ImageOps.contain(logo, (image.width, max_height))
+
+    x_logo = (image.width - logo.width) // 2
+    y_logo = int(image.height * 0.02)
+    image.paste(logo, (x_logo, y_logo), logo)
+
+    draw = ImageDraw.Draw(image)
+    font_title = load_font("JandaManateeSolid.ttf", max(24, int(image.height * 0.036)))
+    font_subtitle = load_font("JandaManateeSolid.ttf", max(24, int(image.height * 0.05)))
+
+    title_text = "NOS CRENEAUX DISPONIBLES"
+
+    bbox_title = draw.textbbox((0, 0), title_text, font=font_title)
+    draw.text(
+        ((image.width - (bbox_title[2] - bbox_title[0])) // 2, logo.height * 1.2),
+        title_text,
+        fill=COLOR_GOLD,
+        font=font_title,
+    )
+
+    bbox_sub = draw.textbbox((0, 0), Title, font=font_subtitle)
+    draw.text(
+        ((image.width - (bbox_sub[2] - bbox_sub[0])) // 2, logo.height * 1.45),
+        Title,
+        fill=COLOR_BLACK,
+        font=font_subtitle,
+    )
+
+
+def draw_schedule_grid(image: Image.Image, schedule_items: list[tuple[str, str]], rows: int, cols: int) -> None:
     draw = ImageDraw.Draw(image)
     metrics = calculate_grid_metrics(image.width, image.height, rows, cols)
 
@@ -463,24 +436,11 @@ def draw_schedule_grid(
     size_w, size_h = metrics["size_w"], metrics["size_h"]
     top_margin, left_margin = metrics["top_margin"], metrics["left_margin"]
 
-    # 1. Dessin des lignes séparatrices verticales entre colonnes
-    #separator_width = max(2, int(image.width * 0.006))
-    #for col in range(1, cols):
-    #    sep_x = left_margin + col * cell_w
-    #    draw.line(
-    #        (sep_x, top_margin, sep_x, top_margin + metrics["usable_height"]),
-    #        fill=COLOR_GOLD,
-    #        width=separator_width,
-    #    )
-
-    # 2. Dessin des cartes d'arrière-plan (squircles/rounded rectangles)
     radius = int(min(size_w, size_h) * 0.48)
     for row in range(rows):
         for col in range(cols):
             idx = col * rows + row
-            status = (
-                schedule_items[idx][1] if idx < len(schedule_items) else "DISPONIBLE"
-            )
+            status = schedule_items[idx][1] if idx < len(schedule_items) else "DISPONIBLE"
             is_available = status.lower().startswith("disponible")
             fill_color = COLOR_WHITE if is_available else COLOR_DISABLED_BG
             outline_color = COLOR_BLUE if is_available else COLOR_WHITE
@@ -488,7 +448,7 @@ def draw_schedule_grid(
             x_center = left_margin + (col + 0.5) * cell_w
             y_center = top_margin + (row + 0.5) * cell_h
 
-            if schedule_items[idx][1] != "ABSENT":
+            if idx < len(schedule_items) and schedule_items[idx][1] != "ABSENT":
                 draw.rounded_rectangle(
                     (
                         x_center - size_w / 2,
@@ -500,47 +460,29 @@ def draw_schedule_grid(
                     fill=fill_color,
                     outline=outline_color,
                     width=3
-
                 )
 
-    # 3. Dessin des icônes + en-têtes de colonnes
     font_header = load_font(None, max(12, int(cell_w * 0.14)), bold=True)
-
-    icon_width = int(cell_w * 0.35)          # largeur identique pour les 4 icônes
+    icon_width = int(cell_w * 0.35)
     icon_text_gap = int(image.height * 0.008)
 
     for col, (label, icon_name) in enumerate(zip(COLUMN_LABELS, COLUMN_ICONS)):
         x_center = left_margin + (col + 0.5) * cell_w
-
-        # Chargement de l'icône
-        icon_path = Path.cwd().parent / "img" / icon_name
+        icon_path = IMG_FOLDER / icon_name
+        
         if icon_path.exists():
-
             icon = Image.open(icon_path).convert("RGBA")
-
             ratio = icon.height / icon.width
-            icon = ImageOps.contain(
-                icon,
-                (icon_width, int(icon_width * ratio))
-            )
+            icon = ImageOps.contain(icon, (icon_width, int(icon_width * ratio)))
 
             icon_x = int(x_center - icon.width / 2)
             icon_y = int(top_margin - image.height * 0.075)
 
             alpha = icon.getchannel("A")
-
-            # ---------- Contour noir (extérieur) ----------
             black_alpha = alpha.filter(ImageFilter.MaxFilter(3))
             black_outline = Image.new("RGBA", icon.size, (0, 0, 0, 0))
             black_outline.putalpha(black_alpha)
 
-            # ---------- Contour blanc (intérieur) ----------
-            white_alpha = alpha.filter(ImageFilter.MaxFilter(5))
-            white_outline = Image.new("RGBA", icon.size, (255, 255, 255, 0))
-            white_outline.putalpha(white_alpha)
-
-            # Dessin dans l'ordre
-            #image.paste(white_outline, (icon_x, icon_y), white_outline)
             image.paste(black_outline, (icon_x, icon_y), black_outline)
             image.paste(icon, (icon_x, icon_y), icon)
 
@@ -558,13 +500,7 @@ def draw_schedule_grid(
             font=font_header,
         )
 
-    # 4. Dessin du contenu des cellules (Horaires et Statuts/Croix)
-    time_font = load_font(
-        "Montserrat-Regular.ttf",
-        int(cell_w * 0.25),
-        bold=False,
-    )
-    
+    time_font = load_font("Montserrat-Regular.ttf", int(cell_w * 0.25), bold=False)
     status_font = load_font(None, int(cell_w * 0.095), bold=True)
 
     for idx, (time_text, status_text) in enumerate(schedule_items[: rows * cols]):
@@ -573,13 +509,13 @@ def draw_schedule_grid(
         x_center = left_margin + (col + 0.5) * cell_w
         y_center = top_margin + (row + 0.45) * cell_h
 
-        # Dessin du texte de l'heure
-        t_bbox = draw.textbbox((0, 0), time_text, font=time_font)
-        t_w, t_h = t_bbox[2] - t_bbox[0], t_bbox[3] - t_bbox[1]
         if status_text.lower().startswith("disponible"):
             colorHour = COLOR_BLACK
         else:
             colorHour = COLOR_WHITE
+
+        t_bbox = draw.textbbox((0, 0), time_text, font=time_font)
+        t_w, t_h = t_bbox[2] - t_bbox[0], t_bbox[3] - t_bbox[1]
 
         draw.text(
             (x_center - t_w / 2, y_center - t_h / 2 - int(size_h * 0.2)),
@@ -588,7 +524,6 @@ def draw_schedule_grid(
             font=time_font,
         )
 
-        # Dessin du statut ("Disponible" ou Croix d'indisponibilité)
         if status_text.lower().startswith("disponible"):
             s_bbox = draw.textbbox((0, 0), status_text, font=status_font)
             s_w, s_h = s_bbox[2] - s_bbox[0], s_bbox[3] - s_bbox[1]
@@ -599,51 +534,28 @@ def draw_schedule_grid(
                 font=status_font,
             )
         elif status_text.lower().startswith("absent"):
-            toto="test"
+            pass
         else:
             cross_size = int(min(size_w, size_h) * 0.18)
             thickness = max(2, int(cross_size * 0.30))
             cx, cy = x_center, y_center + int(size_h * 0.3)
 
-            draw.line(
-                (
-                    cx - cross_size / 2,
-                    cy - cross_size / 2,
-                    cx + cross_size / 2,
-                    cy + cross_size / 2,
-                ),
-                fill=COLOR_RED,
-                width=thickness,
-            )
-            draw.line(
-                (
-                    cx - cross_size / 2,
-                    cy + cross_size / 2,
-                    cx + cross_size / 2,
-                    cy - cross_size / 2,
-                ),
-                fill=COLOR_RED,
-                width=thickness,
-            )
+            draw.line((cx - cross_size / 2, cy - cross_size / 2, cx + cross_size / 2, cy + cross_size / 2), fill=COLOR_RED, width=thickness)
+            draw.line((cx - cross_size / 2, cy + cross_size / 2, cx + cross_size / 2, cy - cross_size / 2), fill=COLOR_RED, width=thickness)
 
 
 def add_footer(image: Image.Image, footer_path: Path) -> None:
-    """Superpose le bandeau de bas de page et ses textes de réassurance (modifie l'image en place)."""
     if not footer_path.exists():
         print(f"Fichier Footer introuvable : {footer_path}")
         return
 
-    # Intégration de l'image de fond du footer
     footer = Image.open(footer_path).convert("RGBA")
-    footer = ImageOps.contain(
-        footer, (int(image.width * 1.0), int(image.height * 0.16))
-    )
+    footer = ImageOps.contain(footer, (int(image.width * 1.0), int(image.height * 0.16)))
 
     x_footer = (image.width - footer.width) // 2
     y_footer = image.height - footer.height
     image.paste(footer, (x_footer, y_footer), footer)
 
-    # Configuration et dessin des textes d'appel à l'action
     draw = ImageDraw.Draw(image)
     main_font = load_font("JandaManateeSolid.ttf", max(20, int(image.height * 0.035)))
     sub_font = load_font(None, max(16, int(image.height * 0.02)), bold=False)
@@ -651,7 +563,6 @@ def add_footer(image: Image.Image, footer_path: Path) -> None:
     text_main = "Réservez votre créneau en ligne !"
     text_sub = "Apple Store, Google Play ou site internet en bio !"
 
-    # Texte principal (doré)
     bbox_m = draw.textbbox((0, 0), text_main, font=main_font)
     text_y = image.height - int(image.height * 0.081)
     draw.text(
@@ -661,86 +572,12 @@ def add_footer(image: Image.Image, footer_path: Path) -> None:
         font=main_font,
     )
 
-    # Texte secondaire (blanc)
     bbox_s = draw.textbbox((0, 0), text_sub, font=sub_font)
     draw.text(
-        (
-            (image.width - (bbox_s[2] - bbox_s[0])) // 2,
-            text_y + int(image.height * 0.05),
-        ),
+        ((image.width - (bbox_s[2] - bbox_s[0])) // 2, text_y + int(image.height * 0.05)),
         text_sub,
         fill=COLOR_WHITE,
         font=sub_font,
-    )
-
-def load_font(
-    name: str | None, size: int, bold: bool = False
-) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """
-    Charge une police Truetype par nom spécifique ou via la liste de secours.
-    Retourne la police par défaut de PIL si aucune police n'est disponible.
-    """
-    # 1. Tentative de chargement par nom spécifique s'il est fourni
-
-
-    if name:
-        try:
-            return ImageFont.truetype(FNT_FOLDER / name, size)
-        except Exception:
-            pass
-
-    # 2. Recherche dans la liste de polices prioritaires
-    candidates = PREFERRED_FONTS if bold else reversed(PREFERRED_FONTS)
-    for font_name in candidates:
-        try:
-            return ImageFont.truetype(FNT_FOLDER / font_name, size)
-        except Exception:
-            continue
-
-    # 3. Fallback sur la police PIL par défaut
-    return ImageFont.load_default()
-
-# ==============================================================================
-# COMPOSANTS VISUELS (EN-TÊTE, GRILLE, PIED DE PAGE)
-# ==============================================================================
-def add_header_logo(image: Image.Image, logo_path: Path, Title : str) -> None:
-    """Superpose le logo et dessine les titres en haut de l'image (modifie l'image en place)."""
-    if not logo_path.exists():
-        print(f"Fichier Logo introuvable : {logo_path}")
-        return
-
-    # Redimensionnement et collage du logo
-    logo = Image.open(logo_path).convert("RGBA")
-    max_height = int(image.height * 0.20)
-    logo = ImageOps.contain(logo, (image.width, max_height))
-
-    x_logo = (image.width - logo.width) // 2
-    y_logo = int(image.height * 0.02)
-    image.paste(logo, (x_logo, y_logo), logo)
-
-    # Configuration des textes de l'en-tête
-    draw = ImageDraw.Draw(image)
-    font_title = load_font("JandaManateeSolid.ttf", max(24, int(image.height * 0.036)))
-    font_subtitle = load_font("JandaManateeSolid.ttf", max(24, int(image.height * 0.05)))
-
-    title_text = "NOS CRENEAUX DISPONIBLES"
-
-    # Dessin du titre principal
-    bbox_title = draw.textbbox((0, 0), title_text, font=font_title)
-    draw.text(
-        ((image.width - (bbox_title[2] - bbox_title[0])) // 2, logo.height * 1.2),
-        title_text,
-        fill=COLOR_GOLD,
-        font=font_title,
-    )
-
-    # Dessin du sous-titre
-    bbox_sub = draw.textbbox((0, 0), Title, font=font_subtitle)
-    draw.text(
-        ((image.width - (bbox_sub[2] - bbox_sub[0])) // 2, logo.height * 1.45),
-        Title,
-        fill=COLOR_BLACK,
-        font=font_subtitle,
     )
 
 
@@ -756,17 +593,17 @@ def main() -> None:
     login_value = sys.argv[1]
     password_value = sys.argv[2]
 
-    # Scraping des données via Selenium
+    # Scraping des données dynamique via Selenium
     data_double, data_single = launch_and_fill(url, login_value, password_value)
 
     # Grille Modèle (Template)
     template_items_single = [
         ("11:00", ""), ("12:00", ""),
-        ("13:00", ""), ("14:00", ""), ("", "ABSENT"), 
+        ("13:00", ""), ("14:00", ""),  ("", "ABSENT"),
         ("15:00", ""), ("16:00", ""),
-        ("17:00", ""), ("18:00", ""),  ("", "ABSENT"), 
+        ("17:00", ""), ("18:00", ""), ("", "ABSENT"),
         ("19:00", ""), ("20:00", ""), ("21:00", ""),
-        ("22:00", ""), ("", "ABSENT"), 
+        ("22:00", ""), ("23:00", ""), 
         ("06:00", ""), ("07:00", ""), 
         ("08:00", ""), ("09:00", ""),   ("10:00", ""), 
     ]
@@ -782,65 +619,36 @@ def main() -> None:
         ("08:00", ""), ("09:00", ""), ("09:30", ""),
     ]
 
-    log_step("ÉTAPE 4/5 : COMPILATION ET STRUCTURATION DES DONNÉES")
-    
-    # Injection des statuts scrapés dans le template
     schedule_items_double = update_schedule_items(template_items_double, data_double)
     schedule_items_single = update_schedule_items(template_items_single, data_single)
 
-    log_substep("DONNÉES FINALES INJECTÉES - TERRAINS DOUBLES")
-    for hour, status in schedule_items_double:
-        print(f"   [{hour}] -> {status}")
+    # Recherche du template de fond
+    image_path = find_single_jpg(BCK_FOLDER)
 
-    log_substep("DONNÉES FINALES INJECTÉES - TERRAIN SIMPLE")
-    for hour, status in schedule_items_single:
-        print(f"   [{hour}] -> {status}")
+    # --------------------------------------------------------------------------
+    # GENERATION IMAGE DOUBLES (GRILLE 6x4)
+    # --------------------------------------------------------------------------
+    canvas_double = Image.open(image_path).convert("RGBA")
+    draw_schedule_grid(canvas_double, schedule_items_double, 6, 4)
+    add_footer(canvas_double, IMG_FOLDER / "Footer.png")
+    add_header_logo(canvas_double, IMG_FOLDER / "LogoBananaPadel.png", "TERRAINS DOUBLES")
 
-    # Choix de 2 fonds distincts aléatoirement
-    log_step("ÉTAPE 5/5 : SÉLECTION DES FONDS ET GÉNÉRATION D'IMAGES")
-    bck_images = list(BCK_FOLDER.glob("*.jpg")) + list(BCK_FOLDER.glob("*.png"))
-    
-    if len(bck_images) >= 2:
-        bg_double, bg_single = random.sample(bck_images, 2)
-        log_info(f"Deux images de fond distinctes tirées au sort : '{bg_double.name}' et '{bg_single.name}'")
-    elif len(bck_images) == 1:
-        bg_double = bg_single = bck_images[0]
-        log_warn(f"Une seule image trouvée dans {BCK_FOLDER}. Utilisation du même fond.")
-    else:
-        bg_double = bg_single = BCK_FOLDER / "default.png"
-        log_warn("Aucune image de fond trouvée dans le dossier. Mode secours par défaut.")
+    RES_FOLDER.mkdir(parents=True, exist_ok=True)
+    out_double = RES_FOLDER / "planning_double.jpg"
+    canvas_double.convert("RGB").save(out_double, quality=95)
+    print(f"[SUCCÈS] Image enregistrée : {out_double}")
 
-    # Ouverture de l'image de base en RGBA unique pour tout le pipeline
-    canvas = Image.open(bg_double).convert("RGBA")
+    # --------------------------------------------------------------------------
+    # GENERATION IMAGE SIMPLE (GRILLE 5x4)
+    # --------------------------------------------------------------------------
+    canvas_single = Image.open(image_path).convert("RGBA")
+    draw_schedule_grid(canvas_single, schedule_items_single, 5, 4)
+    add_footer(canvas_single, IMG_FOLDER / "Footer.png")
+    add_header_logo(canvas_single, IMG_FOLDER / "LogoBananaPadel.png", "TERRAIN SIMPLE")
 
-    # Application séquentielle des éléments
-    draw_schedule_grid(canvas, schedule_items_double, 6,4)
-    add_footer(canvas, IMG_FOLDER / "Footer.png")
-    add_header_logo(canvas, IMG_FOLDER / "LogoBananaPadel.png", "TERRAINS DOUBLES")
-
-    # Conversion finale en RGB pour le format JPG et sauvegarde
-    final_image = canvas.convert("RGB")
-    output_path = RES_FOLDER / "planning_double.jpg"
-    final_image.save(output_path, quality=95)
-    print(f"Image enregistrée avec succès : {output_path}")
-
-    log_step("TRAITEMENT TERMINÉ AVEC SUCCÈS")
-
-        # Ouverture de l'image de base en RGBA unique pour tout le pipeline
-    canvas = Image.open(bg_single).convert("RGBA")
-
-    # Application séquentielle des éléments
-    draw_schedule_grid(canvas, schedule_items_single, 5,4)
-    add_footer(canvas, IMG_FOLDER / "Footer.png")
-    add_header_logo(canvas, IMG_FOLDER / "LogoBananaPadel.png", "TERRAIN SIMPLE")
-
-    # Conversion finale en RGB pour le format JPG et sauvegarde
-    final_image = canvas.convert("RGB")
-    output_path = RES_FOLDER / "planning_simple.jpg"
-    final_image.save(output_path, quality=95)
-    print(f"Image enregistrée avec succès : {output_path}")
-
-    log_step("TRAITEMENT TERMINÉ AVEC SUCCÈS")
+    out_single = RES_FOLDER / "planning_simple.jpg"
+    canvas_single.convert("RGB").save(out_single, quality=95)
+    print(f"[SUCCÈS] Image enregistrée : {out_single}")
 
 
 if __name__ == "__main__":
