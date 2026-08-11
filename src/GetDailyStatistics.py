@@ -82,15 +82,21 @@ def wait_for_interactable(driver: webdriver.Chrome, by: str, value: str, timeout
 
 def find_clickable_link(driver: webdriver.Chrome, text: str):
     normalized_text = text.lower()
-    xpath = (
-        "//a[" 
-        "translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') "
-        f"= '{normalized_text}'"
-        "]"
-    )
-    return WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, xpath))
-    )
+    candidates = [
+        f"//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{normalized_text}')]",
+        f"//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{normalized_text}')]",
+        f"//span[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{normalized_text}')]",
+    ]
+
+    for xpath in candidates:
+        try:
+            return WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, xpath))
+            )
+        except Exception:
+            continue
+
+    raise TimeoutError(f"Unable to find clickable element containing text: {text}")
 
 
 def save_to_excel(row: list[str]) -> None:
@@ -445,12 +451,16 @@ def main() -> None:
         print("  - DOUBLE 2 :", double2_slots)
         print("  - Simple :", simple_slots)
 
+        try:
+            menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
+            menu_link.click()
 
-        menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
-        menu_link.click()
-
-        payment_link = find_clickable_link(driver, "suivi des paiements")
-        payment_link.click()
+            payment_link = find_clickable_link(driver, "suivi des paiements")
+            payment_link.click()
+        except Exception as exc:
+            print(f"Navigation vers paiements impossible : {exc}")
+            print(driver.page_source[:4000])
+            raise
 
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
 
@@ -527,11 +537,16 @@ def main() -> None:
         print("Nombre d'inscrits du jour :", inscriptions)
         print("Nombre de créneaux réservés :", reservations)
 
-        menu_link = find_clickable_link(driver, "RESERVATIONS")
-        menu_link.click()
+        try:
+            menu_link = find_clickable_link(driver, "RESERVATIONS")
+            menu_link.click()
 
-        payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
-        payment_link.click()
+            payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
+            payment_link.click()
+        except Exception as exc:
+            print(f"Navigation vers annulations impossible : {exc}")
+            print(driver.page_source[:4000])
+            raise
 
         date_input = wait_for_interactable(driver, By.ID, "date_annulation")
         date_input.clear()
