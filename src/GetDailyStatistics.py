@@ -45,14 +45,12 @@ STATS_HEADERS = [
 
 def build_driver() -> webdriver.Chrome:
     options = webdriver.ChromeOptions()
-    options.add_argument("--start-maximized")
+    # Required for headful-less execution in CI
+    options.add_argument("--headless=new")  # Use updated headless mode
+    options.add_argument("--no-sandbox")   # Required in Linux container environments
+    options.add_argument("--disable-dev-shm-usage")  # Overcomes limited resource problems (/dev/shm)
     options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--remote-allow-origins=*")
 
     chrome_binary = (
         shutil.which("chromium")
