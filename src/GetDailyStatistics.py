@@ -413,11 +413,15 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
 def main() -> None:
     driver = build_driver()
     try:
+        time.sleep(10)
+
         driver.get(URL)
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
+        time.sleep(60)
 
         login_input = wait_for_interactable(driver, By.ID, "login")
         password_input = wait_for_interactable(driver, By.ID, "mot_de_passe")
+        time.sleep(3)
 
         login_input.clear()
         password_input.clear()
@@ -452,7 +456,7 @@ def main() -> None:
         print("  - Simple :", simple_slots)
 
         try:
-            time.sleep(5)
+            time.sleep(10)
             menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
             menu_link.click()
             time.sleep(2)
