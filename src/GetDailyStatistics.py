@@ -452,11 +452,14 @@ def main() -> None:
         print("  - Simple :", simple_slots)
 
         try:
+            time.sleep(5)
             menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
             menu_link.click()
+            time.sleep(2)
 
             payment_link = find_clickable_link(driver, "suivi des paiements")
             payment_link.click()
+            time.sleep(5)
         except Exception as exc:
             print(f"Navigation vers paiements impossible : {exc}")
             print(driver.page_source[:4000])
@@ -493,6 +496,7 @@ def main() -> None:
 
         recap_button = wait_for_interactable(driver, By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'récap mensuel')]")
         recap_button.click()
+        time.sleep(2)
 
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
 
@@ -540,9 +544,11 @@ def main() -> None:
         try:
             menu_link = find_clickable_link(driver, "RESERVATIONS")
             menu_link.click()
+            time.sleep(5)
 
             payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
             payment_link.click()
+            time.sleep(5)
         except Exception as exc:
             print(f"Navigation vers annulations impossible : {exc}")
             print(driver.page_source[:4000])
