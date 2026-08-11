@@ -90,7 +90,7 @@ def find_clickable_link(driver: webdriver.Chrome, text: str):
 
     for xpath in candidates:
         try:
-            return WebDriverWait(driver, 5).until(
+            return WebDriverWait(driver, 60).until(
                 EC.element_to_be_clickable((By.XPATH, xpath))
             )
         except Exception:
