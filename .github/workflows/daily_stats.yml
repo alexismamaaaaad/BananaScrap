@@ -30,8 +30,8 @@ jobs:
 
       - name: Run stats script
         env:
-          LOGIN: ${{ secrets.LOGIN }}
-          PASSWORD: ${{ secrets.PASSWORD }}
+          LOGIN: ${{ secrets.APP_LOG}}
+          PASSWORD: ${{ secrets.APP_PWD }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
           python src/GetDailyStatistics.py
