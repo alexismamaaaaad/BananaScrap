@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import List
+from dotenv import load_dotenv
 import resend
 
 import pandas as pd
@@ -17,6 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 URL = "https://gestion.livexperience.fr/"
 LOGIN = "adm_bananapadel378"
 PASSWORD = "SurLePapierJerem!!4545"
+load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 OUTPUT_XLSX_PATH = Path(__file__).resolve().parents[1] / "results" / "DailyStats.xlsx"
@@ -255,8 +257,8 @@ def build_daily_stats_email_html(stats_row: List[str]) -> str:
 
     replacements = {
         "{{DATE_DAY}}": human_date,
-        "{{CA_DAY}}": str(ca_day) if len(stats_row) > 1 else "0",
-        "{{FRAIS_DAY}}": str(frais_day) if len(stats_row) > 2 else "0",
+        "{{CA_DAY}}": str(ca_day) +" €" if len(stats_row) > 1 else "0",
+        "{{FRAIS_DAY}}": str(frais_day) +" €" if len(stats_row) > 2 else "0",
         "{{REAL_DAY}}": str(real_day) if len(stats_row) > 3 else "0",
         "{{GOAL_DAY}}": ("✅ +" if ca_day >= daily_goal else "❌ ") + str(round(percent_goal, 2)) + "%",
         "{{CLASS_DAY_GOAL}}": " capsulesuccess " if ca_day >= daily_goal else " capsuleerror ",
@@ -270,9 +272,9 @@ def build_daily_stats_email_html(stats_row: List[str]) -> str:
         "{{ANNULATIONS}}": str(stats_row[13]) if len(stats_row) > 13 else "0",
         "{{DETAIL_ANNULATIONS}}": (stats_row[14] if len(stats_row) > 14 else "Aucun").replace("\n", "<br>"),
         "{{COMPTES_CREES}}":  str(stats_row[7]) if len(stats_row) > 7 else "0",
-        "{{CA_MONTH}}": str(ca_month) if len(stats_row) > 4 else "0",
-        "{{FRAIS_MONTH}}": str(frais_month) if len(stats_row) > 5 else "0",
-        "{{REAL_MONTH}}": str(real_month) if len(stats_row) > 6 else "0",
+        "{{CA_MONTH}}": str(ca_month)+" €"  if len(stats_row) > 4 else "0",
+        "{{FRAIS_MONTH}}": str(frais_month)+" €" if len(stats_row) > 5 else "0",
+        "{{REAL_MONTH}}": str(real_month)+" €" if len(stats_row) > 6 else "0",
         "{{GOAL_MONTH}}": ("✅ +" if percent_month_goal > 0 else "❌ ") + str(round(percent_month_goal, 2)) + "%",
         "{{CLASS_MONTH_GOAL}}": " capsulesuccess " if percent_month_goal > 0 else " capsuleerror ",
         "{{MONTH_TO_DATE}}": str(round(goal_today_month, 0)),
@@ -299,6 +301,7 @@ def save_daily_stats_html(stats_row: List[str]) -> None:
         output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
         output_html_path.write_text(html_body, encoding="utf-8")
         print(f"HTML enregistré : {output_html_path}")
+        date_value =  datetime.now().strftime("%d/%m/%Y")
 
         with open(output_html_path, "r", encoding="utf-8") as f:
             html = f.read()
@@ -306,7 +309,7 @@ def save_daily_stats_html(stats_row: List[str]) -> None:
         resend.Emails.send({
             "from": "Banana_Stats@resend.dev",
             "to": ["roc4invest@gmail.com"],
-            "subject": "Test Banana Padel",
+            "subject": f"Banana Stats - Résumé du jour : {date_value}",
             "html": html
         })
         
