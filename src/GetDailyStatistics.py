@@ -1,14 +1,13 @@
 import calendar
 import os
+import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
-from dotenv import load_dotenv
-import resend
 
 import pandas as pd
-
+import resend
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -16,10 +15,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 URL = "https://gestion.livexperience.fr/"
-LOGIN = "adm_bananapadel378"
-PASSWORD = "SurLePapierJerem!!4545"
+
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
+LOGIN = os.getenv("APP_LOG")
+PASSWORD = os.getenv("APP_PWD")
 
 OUTPUT_XLSX_PATH = Path(__file__).resolve().parents[1] / "results" / "DailyStats.xlsx"
 OUTPUT_TEMPLATE_HTML_PATH = Path(__file__).resolve().parents[1] / "results" / "template_daily_result.html"
@@ -49,6 +49,24 @@ def build_driver() -> webdriver.Chrome:
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--remote-allow-origins=*")
+
+    chrome_binary = (
+        shutil.which("chromium")
+        or shutil.which("chromium-browser")
+        or shutil.which("google-chrome")
+        or shutil.which("google-chrome-stable")
+    )
+    if chrome_binary:
+        options.binary_location = chrome_binary
+
+    chromedriver_path = shutil.which("chromedriver")
+    if chromedriver_path:
+        return webdriver.Chrome(service=webdriver.ChromeService(executable_path=chromedriver_path), options=options)
+
     return webdriver.Chrome(options=options)
 
 
@@ -77,7 +95,7 @@ def find_clickable_link(driver: webdriver.Chrome, text: str):
     )
 
 
-def save_to_excel(row: List[str]) -> None:
+def save_to_excel(row: list[str]) -> None:
     OUTPUT_XLSX_PATH.parent.mkdir(exist_ok=True)
 
     if OUTPUT_XLSX_PATH.exists():
@@ -170,20 +188,20 @@ def extract_numeric_value(value: str):
         return ""
     
 def get_month_progress_days() -> float:
-    today = datetime.now()
+    today = datetime.now(timezone.utc)
     # Get total number of days in current month
     total_days = calendar.monthrange(today.year, today.month)[1]
 
     # Percentage based on current day number
     return (today.day / total_days) * 100
 
-def build_daily_stats_email_html(stats_row: List[str]) -> str:
+def build_daily_stats_email_html(stats_row: list[str]) -> str:
     if not OUTPUT_TEMPLATE_HTML_PATH.exists():
         raise FileNotFoundError(f"Template HTML introuvable : {OUTPUT_TEMPLATE_HTML_PATH}")
 
     html = OUTPUT_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
 
-    date_value = stats_row[0] if len(stats_row) > 0 else datetime.now().strftime("%Y%m%d")
+    date_value = stats_row[0] if len(stats_row) > 0 else datetime.now(timezone.utc).strftime("%Y%m%d")
     try:
         parsed_date = datetime.strptime(date_value, "%Y%m%d")
         human_date = parsed_date.strftime("%A %d %B %Y")
@@ -294,24 +312,24 @@ def build_daily_stats_email_html(stats_row: List[str]) -> str:
     return html
 
 
-def save_daily_stats_html(stats_row: List[str]) -> None:
+def save_daily_stats_html(stats_row: list[str]) -> None:
     try:
         html_body = build_daily_stats_email_html(stats_row)
-        date_value = stats_row[0] if len(stats_row) > 0 else datetime.now().strftime("%Y%m%d")
+        date_value = stats_row[0] if len(stats_row) > 0 else datetime.now(timezone.utc).strftime("%Y%m%d")
         output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
         output_html_path.write_text(html_body, encoding="utf-8")
         print(f"HTML enregistré : {output_html_path}")
-        date_value =  datetime.now().strftime("%d/%m/%Y")
+        date_value = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
         with open(output_html_path, "r", encoding="utf-8") as f:
             html = f.read()
 
-        resend.Emails.send({
-            "from": "Banana_Stats@resend.dev",
-            "to": ["roc4invest@gmail.com"],
-            "subject": f"Banana Stats - Résumé du jour : {date_value}",
-            "html": html
-        })
+       # resend.Emails.send({
+       #     "from": "Banana_Stats@resend.dev",
+       #     "to": ["roc4invest@gmail.com"],
+       #     "subject": f"Banana Stats - Résumé du jour : {date_value}",
+       #     "html": html
+       # })
         
     except Exception as exc:
         print(f"Échec de la génération du fichier HTML : {exc}")
@@ -392,7 +410,7 @@ def main() -> None:
     driver = build_driver()
     try:
         driver.get(URL)
-        today = datetime.now().strftime("%d/%m/%Y")
+        today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
         login_input = wait_for_interactable(driver, By.ID, "login")
         password_input = wait_for_interactable(driver, By.ID, "mot_de_passe")
@@ -446,7 +464,7 @@ def main() -> None:
         filter_button.click()
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
-        texts: List[str] = []
+        texts: list[str] = []
         for row in rows:
             text = row.get_attribute("innerText") or row.text or ""
             if text.strip():
@@ -527,7 +545,7 @@ def main() -> None:
         wait_for_element(driver, By.XPATH, "//table[contains(@class, 'table-striped')]")
 
         rows = driver.find_elements(By.CSS_SELECTOR, "table.table-striped tbody tr")
-        cancellation_details: List[str] = []
+        cancellation_details: list[str] = []
         for index, row in enumerate(rows, start=1):
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) < 8:
@@ -545,7 +563,7 @@ def main() -> None:
             print(f"  Creneau annulé {index}: {cancellation_slot} / {client} / {terrain} / {tarif} / {moyen_annulation}")
 
         stats_row = [
-            str(datetime.now().strftime("%Y%m%d")),
+            str(datetime.now(timezone.utc).strftime("%Y%m%d")),
             total_paye,
             total_frais,
             total_club,
