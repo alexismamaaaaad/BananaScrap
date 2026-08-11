@@ -1,8 +1,10 @@
 import calendar
+import os
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import List
+import resend
 
 import pandas as pd
 
@@ -15,6 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 URL = "https://gestion.livexperience.fr/"
 LOGIN = "adm_bananapadel378"
 PASSWORD = "SurLePapierJerem!!4545"
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 OUTPUT_XLSX_PATH = Path(__file__).resolve().parents[1] / "results" / "DailyStats.xlsx"
 OUTPUT_TEMPLATE_HTML_PATH = Path(__file__).resolve().parents[1] / "results" / "template_daily_result.html"
@@ -232,6 +235,24 @@ def build_daily_stats_email_html(stats_row: List[str]) -> str:
     print(f"goal_today_month: {goal_today_month}")
     print(f"percent_month_goal: {percent_month_goal}")
 
+    if percent_goal >= 0:
+        DAY_GOAL_STYLE = "background-color:#F0FDF4;border:2px solid #22C55E;"
+        DAY_GOAL_TITLE_STYLE = "color:#15803D;"
+        DAY_GOAL_VALUE_STYLE = "color:#16A34A;"
+    else:
+        DAY_GOAL_STYLE = "background-color:#FFF2F2;border:2px solid #E53E3E;"
+        DAY_GOAL_TITLE_STYLE = "color:#9B2C2C;"
+        DAY_GOAL_VALUE_STYLE = "color:#E53E3E;"
+
+    if percent_month_goal >= 0:
+        MONTH_GOAL_STYLE = "background-color:#F0FDF4;border:2px solid #22C55E;"
+        MONTH_GOAL_TITLE_STYLE = "color:#15803D;"
+        MONTH_GOAL_VALUE_STYLE = "color:#16A34A;"
+    else:
+        MONTH_GOAL_STYLE = "background-color:#FFF2F2;border:2px solid #E53E3E;"
+        MONTH_GOAL_TITLE_STYLE = "color:#9B2C2C;"
+        MONTH_GOAL_VALUE_STYLE = "color:#E53E3E;"
+
     replacements = {
         "{{DATE_DAY}}": human_date,
         "{{CA_DAY}}": str(ca_day) if len(stats_row) > 1 else "0",
@@ -255,7 +276,14 @@ def build_daily_stats_email_html(stats_row: List[str]) -> str:
         "{{GOAL_MONTH}}": ("✅ +" if percent_month_goal > 0 else "❌ ") + str(round(percent_month_goal, 2)) + "%",
         "{{CLASS_MONTH_GOAL}}": " capsulesuccess " if percent_month_goal > 0 else " capsuleerror ",
         "{{MONTH_TO_DATE}}": str(round(goal_today_month, 0)),
-    
+
+        "{{DAY_GOAL_STYLE}}": DAY_GOAL_STYLE,
+        "{{DAY_GOAL_TITLE_STYLE}}": DAY_GOAL_TITLE_STYLE,
+        "{{DAY_GOAL_VALUE_STYLE}}": DAY_GOAL_VALUE_STYLE,
+        "{{MONTH_GOAL_STYLE}}": MONTH_GOAL_STYLE,
+        "{{MONTH_GOAL_TITLE_STYLE}}": MONTH_GOAL_TITLE_STYLE,
+        "{{MONTH_GOAL_VALUE_STYLE}}": MONTH_GOAL_VALUE_STYLE,
+
     }
 
     for placeholder, value in replacements.items():
@@ -271,6 +299,17 @@ def save_daily_stats_html(stats_row: List[str]) -> None:
         output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
         output_html_path.write_text(html_body, encoding="utf-8")
         print(f"HTML enregistré : {output_html_path}")
+
+        with open(output_html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        resend.Emails.send({
+            "from": "Banana_Stats@resend.dev",
+            "to": ["roc4invest@gmail.com"],
+            "subject": "Test Banana Padel",
+            "html": html
+        })
+        
     except Exception as exc:
         print(f"Échec de la génération du fichier HTML : {exc}")
 

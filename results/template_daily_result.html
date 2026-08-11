@@ -1,0 +1,2254 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<title>Banana Padel - Rapport de Performance</title>
+
+<style>
+```css
+/* =========================================================
+   BANANA PADEL - EMAIL CSS
+   Compatible desktop + mobile + principaux clients mail
+========================================================= */
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+html,
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+}
+
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background-color: #F4F7FA;
+
+    color: #343A40;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+
+    mso-table-lspace: 0pt !important;
+    mso-table-rspace: 0pt !important;
+}
+
+td {
+    margin: 0;
+    padding: 0;
+}
+
+img {
+    border: 0;
+    outline: none;
+    text-decoration: none;
+
+    display: block;
+
+    -ms-interpolation-mode: bicubic;
+}
+
+p {
+    margin: 0;
+    padding: 0;
+}
+
+
+/* =========================================================
+   CONTENEUR PRINCIPAL
+========================================================= */
+
+.email-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.email-container {
+    width: 100% !important;
+    max-width: 900px !important;
+
+    background-color: #FFFFFF;
+
+    border: 2px solid #E8EEF5;
+
+    border-radius: 24px;
+}
+
+.main-padding {
+    padding-left: 28px;
+    padding-right: 28px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header-padding {
+    padding: 28px 28px 20px 28px;
+
+    border-bottom: 2px solid #F0F2F5;
+}
+
+.logo {
+    width: 58px;
+    height: auto;
+
+    display: block;
+}
+
+.brand-title {
+    font-family:
+        "Arial Rounded MT Bold",
+        "Trebuchet MS",
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 24px;
+    line-height: 27px;
+
+    font-weight: 700;
+
+    color: #1C6AC1;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+}
+
+.brand-subtitle {
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 12px;
+    line-height: 17px;
+
+    font-weight: 500;
+
+    color: #6C757D;
+}
+
+.date-badge {
+    background-color: #FFF8D9;
+
+    color: #343A40;
+
+    border: 1px solid #FACD2C;
+
+    border-radius: 20px;
+
+    padding: 6px 12px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 11px;
+    line-height: 15px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   TABLEAUX DES CAPSULES
+========================================================= */
+
+.stats-table {
+    width: 100% !important;
+
+    table-layout: fixed;
+
+    border-collapse: separate !important;
+
+    border-spacing: 0 !important;
+}
+
+.stats-cell {
+    width: 25%;
+
+    padding-right: 7px;
+
+    vertical-align: top;
+}
+
+.stats-cell-middle {
+    width: 25%;
+
+    padding-left: 7px;
+    padding-right: 7px;
+
+    vertical-align: top;
+}
+
+.stats-cell-last {
+    width: 25%;
+
+    padding-left: 7px;
+
+    vertical-align: top;
+}
+
+
+/* =========================================================
+   TABLE INTERNE CAPSULE
+========================================================= */
+
+.capsule-table {
+    width: 100% !important;
+
+    table-layout: fixed;
+}
+
+.capsule {
+    width: 100%;
+
+    padding: 17px 8px;
+
+    text-align: center;
+
+    vertical-align: middle;
+
+    border-radius: 16px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+
+/* =========================================================
+   TITRE CAPSULE
+========================================================= */
+
+.capsule-title {
+    margin: 0 0 5px 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 10px;
+    line-height: 14px;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.6px;
+}
+
+
+/* =========================================================
+   VALEUR CAPSULE
+========================================================= */
+
+.capsule-value {
+    font-family:
+        "Arial Rounded MT Bold",
+        "Trebuchet MS",
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 22px;
+    line-height: 27px;
+
+    font-weight: 700;
+}
+
+.capsule-value-large {
+    font-family:
+        "Arial Rounded MT Bold",
+        "Trebuchet MS",
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 24px;
+    line-height: 29px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   LIGNE EURO
+========================================================= */
+
+.row-euro .capsule {
+
+    background-color: #1C6AC1;
+
+    color: #FFFFFF;
+
+    border: 0;
+
+    box-shadow:
+        0 4px 10px rgba(28, 106, 193, 0.15);
+}
+
+.row-euro .capsule-title {
+    color: #E8F2FC;
+}
+
+.row-euro .capsule-value {
+    color: #FACD2C;
+}
+
+
+/* =========================================================
+   STATS 1
+========================================================= */
+
+.row-stats-1 .capsule {
+
+    background-color: #FFF9E2;
+
+    border: 2px solid #FACD2C;
+}
+
+.row-stats-1 .capsule-title {
+    color: #343A40;
+}
+
+.row-stats-1 .capsule-value {
+    color: #1C6AC1;
+}
+
+
+/* =========================================================
+   STATS 2
+========================================================= */
+
+.row-stats-2 .capsule {
+
+    background-color: #F8F9FA;
+
+    border: 1px solid #E9ECEF;
+}
+
+.row-stats-2 .capsule-title {
+    color: #6C757D;
+}
+
+.row-stats-2 .capsule-value {
+    color: #343A40;
+}
+
+
+/* =========================================================
+   =========================================================
+   CAPSULE ERROR
+   =========================================================
+========================================================= */
+
+.capsule.capsuleerror {
+
+    background-color: #FFF2F2 !important;
+
+    border: 2px solid #E53E3E !important;
+
+    color: #E53E3E !important;
+
+    box-shadow: none !important;
+}
+
+
+/* TITRE ERROR */
+
+.capsule.capsuleerror .capsule-title {
+
+    color: #9B2C2C !important;
+
+    font-weight: 700 !important;
+}
+
+
+/* VALEUR ERROR */
+
+.capsule.capsuleerror .capsule-value {
+
+    color: #E53E3E !important;
+
+    font-weight: 700 !important;
+}
+
+
+/* VERSION RENFORCÉE POUR ROW-EURO */
+
+.row-euro .capsule.capsuleerror {
+
+    background-color: #FFF2F2 !important;
+
+    border: 2px solid #E53E3E !important;
+
+    color: #E53E3E !important;
+
+    box-shadow: none !important;
+}
+
+.row-euro .capsule.capsuleerror .capsule-title {
+
+    color: #9B2C2C !important;
+}
+
+.row-euro .capsule.capsuleerror .capsule-value {
+
+    color: #E53E3E !important;
+}
+
+
+/* =========================================================
+   =========================================================
+   CAPSULE SUCCESS
+   =========================================================
+========================================================= */
+
+.capsule.capsulesuccess {
+
+    background-color: #F0FDF4 !important;
+
+    border: 2px solid #22C55E !important;
+
+    color: #16A34A !important;
+
+    box-shadow: none !important;
+}
+
+
+/* TITRE SUCCESS */
+
+.capsule.capsulesuccess .capsule-title {
+
+    color: #15803D !important;
+
+    font-weight: 700 !important;
+}
+
+
+/* VALEUR SUCCESS */
+
+.capsule.capsulesuccess .capsule-value {
+
+    color: #16A34A !important;
+
+    font-weight: 700 !important;
+}
+
+
+/* VERSION RENFORCÉE POUR ROW-EURO */
+
+.row-euro .capsule.capsulesuccess {
+
+    background-color: #F0FDF4 !important;
+
+    border: 2px solid #22C55E !important;
+
+    color: #16A34A !important;
+
+    box-shadow: none !important;
+}
+
+.row-euro .capsule.capsulesuccess .capsule-title {
+
+    color: #15803D !important;
+}
+
+.row-euro .capsule.capsulesuccess .capsule-value {
+
+    color: #16A34A !important;
+}
+
+
+/* =========================================================
+   LISTE
+========================================================= */
+
+.list-section {
+    width: 100%;
+
+    margin-top: 20px;
+}
+
+.list-row {
+
+    width: 100%;
+
+    background-color: #FFFFFF;
+
+    border: 1px solid #E9ECEF;
+
+    border-left: 5px solid #1C6AC1;
+
+    border-radius: 12px;
+}
+
+.list-row:nth-child(even) {
+
+    background-color: #FAFAFA;
+
+    border-left-color: #FACD2C;
+}
+
+.list-title-cell {
+
+    width: 140px;
+
+    padding: 13px 14px;
+
+    vertical-align: middle;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 11px;
+    line-height: 16px;
+
+    font-weight: 700;
+
+    color: #343A40;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.4px;
+}
+
+.list-items-cell {
+
+    padding: 13px 14px;
+
+    vertical-align: middle;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 12px;
+    line-height: 18px;
+
+    color: #343A40;
+}
+
+
+/* =========================================================
+   CHIPS
+========================================================= */
+
+.list-items {
+    width: 100%;
+}
+
+.list-item-chip {
+
+    display: inline-block;
+
+    background-color: #FFFFFF;
+
+    border: 1px solid #DEE2E6;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 11px;
+    line-height: 16px;
+
+    font-weight: 600;
+
+    color: #343A40;
+
+    margin: 2px 3px 2px 0;
+}
+
+.list-item-chip .dot {
+
+    display: inline-block;
+
+    width: 8px;
+    height: 8px;
+
+    background-color: #FACD2C;
+
+    border-radius: 50%;
+
+    margin-right: 5px;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+
+    padding: 20px 0 5px 0;
+
+    text-align: center;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 10px;
+    line-height: 15px;
+
+    color: #ADB5BD;
+
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media only screen and (max-width: 600px) {
+
+
+    /* =====================================================
+       PAGE
+    ===================================================== */
+
+    html,
+    body {
+
+        width: 100% !important;
+
+        min-width: 100% !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /* =====================================================
+       CONTENEUR
+    ===================================================== */
+
+    .email-container {
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+
+        border-left: 0 !important;
+
+        border-right: 0 !important;
+
+        border-radius: 0 !important;
+    }
+
+
+    /* =====================================================
+       PADDING PRINCIPAL
+    ===================================================== */
+
+    .main-padding {
+
+        padding-left: 12px !important;
+
+        padding-right: 12px !important;
+    }
+
+
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
+    .header-padding {
+
+        padding: 20px 16px !important;
+    }
+
+    .logo {
+
+        width: 54px !important;
+
+        max-width: 54px !important;
+    }
+
+    .brand-title {
+
+        font-size: 21px !important;
+
+        line-height: 24px !important;
+    }
+
+    .brand-subtitle {
+
+        font-size: 11px !important;
+
+        line-height: 15px !important;
+    }
+
+    .date-badge {
+
+        font-size: 10px !important;
+
+        line-height: 14px !important;
+
+        padding: 5px 9px !important;
+    }
+
+
+    /* =====================================================
+       TABLEAU STATS
+    ===================================================== */
+
+    .stats-table {
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+
+        table-layout: fixed !important;
+
+        border-spacing: 0 !important;
+    }
+
+
+    /* =====================================================
+       CELLULES
+       
+       IMPORTANT :
+       Elles passent réellement en bloc.
+    ===================================================== */
+
+    .stats-cell,
+    .stats-cell-middle,
+    .stats-cell-last {
+
+        display: block !important;
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+
+        padding-left: 0 !important;
+
+        padding-right: 0 !important;
+
+        padding-bottom: 10px !important;
+    }
+
+
+    /* =====================================================
+       DERNIÈRE CELLULE
+    ===================================================== */
+
+    .stats-cell-last {
+
+        padding-bottom: 0 !important;
+    }
+
+
+    /* =====================================================
+       TABLE INTERNE
+    ===================================================== */
+
+    .capsule-table {
+
+        display: table !important;
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+
+        table-layout: fixed !important;
+    }
+
+
+    /* =====================================================
+       CAPSULE
+    ===================================================== */
+
+    .capsule {
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+
+        box-sizing: border-box !important;
+
+        padding: 15px 12px !important;
+
+        border-radius: 14px !important;
+    }
+
+
+    /* =====================================================
+       TITRE
+    ===================================================== */
+
+    .capsule-title {
+
+        font-size: 10px !important;
+
+        line-height: 14px !important;
+
+        margin-bottom: 4px !important;
+    }
+
+
+    /* =====================================================
+       VALEUR
+    ===================================================== */
+
+    .capsule-value {
+
+        font-size: 22px !important;
+
+        line-height: 27px !important;
+    }
+
+    .capsule-value-large {
+
+        font-size: 23px !important;
+
+        line-height: 28px !important;
+    }
+
+
+    /* =====================================================
+       ERROR MOBILE - TRÈS IMPORTANT
+    ===================================================== */
+
+    .capsule.capsuleerror,
+    .row-euro .capsule.capsuleerror {
+
+        background-color: #FFF2F2 !important;
+
+        border: 2px solid #E53E3E !important;
+
+        color: #E53E3E !important;
+
+        box-shadow: none !important;
+    }
+
+    .capsule.capsuleerror .capsule-title,
+    .row-euro .capsule.capsuleerror .capsule-title {
+
+        color: #9B2C2C !important;
+
+        font-weight: 700 !important;
+    }
+
+    .capsule.capsuleerror .capsule-value,
+    .row-euro .capsule.capsuleerror .capsule-value {
+
+        color: #E53E3E !important;
+
+        font-weight: 700 !important;
+    }
+
+
+    /* =====================================================
+       SUCCESS MOBILE - TRÈS IMPORTANT
+    ===================================================== */
+
+    .capsule.capsulesuccess,
+    .row-euro .capsule.capsulesuccess {
+
+        background-color: #F0FDF4 !important;
+
+        border: 2px solid #22C55E !important;
+
+        color: #16A34A !important;
+
+        box-shadow: none !important;
+    }
+
+    .capsule.capsulesuccess .capsule-title,
+    .row-euro .capsule.capsulesuccess .capsule-title {
+
+        color: #15803D !important;
+
+        font-weight: 700 !important;
+    }
+
+    .capsule.capsulesuccess .capsule-value,
+    .row-euro .capsule.capsulesuccess .capsule-value {
+
+        color: #16A34A !important;
+
+        font-weight: 700 !important;
+    }
+
+
+    /* =====================================================
+       LISTE MOBILE
+    ===================================================== */
+
+    .list-section {
+
+        width: 100% !important;
+
+        margin-top: 18px !important;
+    }
+
+    .list-row {
+
+        width: 100% !important;
+
+        max-width: 100% !important;
+    }
+
+    .list-title-cell {
+
+        display: block !important;
+
+        width: 100% !important;
+
+        padding: 12px 12px 6px 12px !important;
+    }
+
+    .list-items-cell {
+
+        display: block !important;
+
+        width: 100% !important;
+
+        padding: 5px 12px 12px 12px !important;
+
+        text-align: left !important;
+    }
+
+
+    /* =====================================================
+       CHIPS MOBILE
+    ===================================================== */
+
+    .list-item-chip {
+
+        font-size: 11px !important;
+
+        line-height: 16px !important;
+
+        padding: 5px 9px !important;
+
+        margin: 2px 3px 2px 0 !important;
+    }
+
+
+    /* =====================================================
+       FOOTER MOBILE
+    ===================================================== */
+
+    .footer {
+
+        font-size: 10px !important;
+
+        line-height: 15px !important;
+
+        padding-top: 18px !important;
+
+        padding-bottom: 5px !important;
+    }
+}
+
+
+/* =========================================================
+   OUTLOOK / WORD
+========================================================= */
+
+/*
+   À placer en dehors du <style> principal :
+
+   <!--[if mso]>
+   <style type="text/css">
+       ...
+   </style>
+   <![endif]-->
+*/
+```
+
+
+</style>
+
+<!--[if mso]>
+<style type="text/css">
+    body,
+    table,
+    td,
+    p,
+    div {
+        font-family: Arial, Helvetica, sans-serif !important;
+    }
+
+    .capsule {
+        border-radius: 12px !important;
+    }
+</style>
+<![endif]-->
+
+</head>
+
+<body>
+
+<!-- =====================================================
+     BACKGROUND
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="width:100%; background-color:#F4F7FA;"
+>
+<tr>
+<td
+    align="center"
+    valign="top"
+    style="padding:20px 12px;"
+    class="main-padding"
+>
+
+<!-- =====================================================
+     CONTAINER
+====================================================== -->
+
+<table
+    role="presentation"
+    width="900"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    class="email-container desktop-container"
+    style="
+        width:100%;
+        max-width:900px;
+        background-color:#FFFFFF;
+        border:2px solid #E8EEF5;
+        border-radius:24px;
+    "
+>
+
+<!-- =====================================================
+     HEADER
+====================================================== -->
+
+<tr>
+<td
+    class="header-padding"
+    style="
+        padding:28px 28px 20px 28px;
+        border-bottom:2px solid #F0F2F5;
+    "
+>
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<!-- LOGO + TITRE -->
+
+<td
+    valign="middle"
+    style="padding:0;"
+>
+
+<table
+    role="presentation"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<td
+    valign="middle"
+    style="padding-right:12px;"
+>
+    <img
+        src="https://images.livexperience.fr/img/centres/icons/icon_378_512.png"
+        width="58"
+        class="logo"
+        alt="Banana Padel"
+        style="
+            width:58px;
+            height:auto;
+            display:block;
+            border:0;
+        "
+    >
+</td>
+
+<td valign="middle">
+
+<div
+    class="brand-title"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:27px;
+        font-weight:700;
+        color:#1C6AC1;
+        text-transform:uppercase;
+        letter-spacing:0.5px;
+    "
+>
+    Banana Padel
+</div>
+
+<div
+    class="brand-subtitle"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:12px;
+        line-height:17px;
+        color:#6C757D;
+        font-weight:500;
+    "
+>
+    Tableau de bord des performances
+</div>
+
+</td>
+
+</tr>
+</table>
+
+</td>
+
+<!-- DATE -->
+
+<td
+    valign="middle"
+    align="right"
+    style="padding-left:10px;"
+>
+
+<table
+    role="presentation"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    align="right"
+>
+<tr>
+<td
+    class="date-badge"
+    style="
+        background-color:#FFF8D9;
+        color:#343A40;
+        border:1px solid #FACD2C;
+        border-radius:20px;
+        padding:6px 12px;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:11px;
+        line-height:15px;
+        font-weight:700;
+        white-space:nowrap;
+    "
+>
+    {{DATE_DAY}}
+</td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+</td>
+</tr>
+
+
+<!-- =====================================================
+     CONTENU
+====================================================== -->
+
+<tr>
+<td
+    class="main-padding"
+    style="padding:22px 28px 0 28px;"
+>
+
+
+<!-- =====================================================
+     JOUR - 4 CAPSULES
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<!-- CA JOURNÉE -->
+
+<td
+    width="25%"
+    class="mobile-cell"
+    style="width:25%; padding-right:7px;"
+>
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+<td
+    class="capsule"
+    align="center"
+    valign="middle"
+    style="
+        width:100%;
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+        box-shadow:0 4px 10px rgba(28,106,193,0.15);
+    "
+>
+
+<div
+    class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+        margin-bottom:5px;
+    "
+>
+    CA Journée
+</div>
+
+<div
+    class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{CA_DAY}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- FRAIS JOURNÉE -->
+
+<td
+    width="25%"
+    class="mobile-cell"
+    style="width:25%; padding:0 7px;"
+>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    valign="middle"
+    style="
+        width:100%;
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+        box-shadow:0 4px 10px rgba(28,106,193,0.15);
+    "
+>
+
+<div
+    class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+    "
+>
+    Frais Journée
+</div>
+
+<div
+    class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{FRAIS_DAY}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- REVENU JOURNÉE -->
+
+<td
+    width="25%"
+    class="mobile-cell"
+    style="width:25%; padding:0 7px;"
+>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    valign="middle"
+    style="
+        width:100%;
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+        box-shadow:0 4px 10px rgba(28,106,193,0.15);
+    "
+>
+
+<div
+    class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+    "
+>
+    Revenu Journée
+</div>
+
+<div
+    class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{REAL_DAY}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- OBJECTIF JOUR -->
+
+<td
+    width="25%"
+    class="mobile-cell-last"
+    style="width:25%; padding-left:7px;"
+>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule {{CLASS_DAY_GOAL}}"
+    align="center"
+    valign="middle"
+    style="
+        width:100%;
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+        box-shadow:0 4px 10px rgba(28,106,193,0.15); {{DAY_GOAL_STYLE}}
+    "
+>
+
+<div
+    class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600; {{DAY_GOAL_TITLE_STYLE}}
+    "
+>
+    Objectif 240€ TTC
+</div>
+
+<div
+    class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700; {{DAY_GOAL_VALUE_STYLE}}
+    "
+>
+    {{GOAL_DAY}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+
+<!-- ESPACEMENT -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td height="12" style="height:12px; font-size:0; line-height:0;">
+&nbsp;
+</td>
+</tr>
+</table>
+
+
+<!-- =====================================================
+     MOIS - 4 CAPSULES
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<!-- CA MOIS -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding-right:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+    "
+>
+    CA Mois
+</div>
+
+<div class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{CA_MONTH}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- FRAIS MOIS -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+    "
+>
+    Frais Mois
+</div>
+
+<div class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{FRAIS_MONTH}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- REVENU MOIS -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:17px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.6px;
+        font-weight:600;
+    "
+>
+    Revenu Mois
+</div>
+
+<div class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700;
+    "
+>
+    {{REAL_MONTH}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- OBJECTIF MOIS -->
+
+<td width="25%" class="mobile-cell-last" style="width:25%; padding-left:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule {{CLASS_MONTH_GOAL}}"
+    align="center"
+    style="
+        padding:14px 8px;
+        background-color:#1C6AC1;
+        border-radius:16px; {{MONTH_GOAL_STYLE}}
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#E8F2FC;
+        text-transform:uppercase;
+        letter-spacing:0.5px;
+        font-weight:600; {{MONTH_GOAL_TITLE_STYLE}}
+    "
+>
+    Objectif 7200€ TTC<br>
+    ({{MONTH_TO_DATE}} TODAY)
+</div>
+
+<div class="capsule-value capsule-value-large"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:24px;
+        line-height:29px;
+        color:#FACD2C;
+        font-weight:700; {{MONTH_GOAL_VALUE_STYLE}}
+    "
+>
+    {{GOAL_MONTH}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+
+<!-- ESPACEMENT -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td height="14" style="height:14px; font-size:0; line-height:0;">
+&nbsp;
+</td>
+</tr>
+</table>
+
+
+<!-- =====================================================
+     STATS 1
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<!-- DOUBLE 1 -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding-right:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#FFF9E2;
+        border:2px solid #FACD2C;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#343A40;
+        text-transform:uppercase;
+        letter-spacing:0.4px;
+        font-weight:700;
+    "
+>
+    DOUBLE 1
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:22px;
+        line-height:27px;
+        color:#1C6AC1;
+        font-weight:700;
+    "
+>
+    {{DOUBLE_1}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- DOUBLE 2 -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#FFF9E2;
+        border:2px solid #FACD2C;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#343A40;
+        text-transform:uppercase;
+        font-weight:700;
+    "
+>
+    DOUBLE 2
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:22px;
+        line-height:27px;
+        color:#1C6AC1;
+        font-weight:700;
+    "
+>
+    {{DOUBLE_2}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- SIMPLE -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#FFF9E2;
+        border:2px solid #FACD2C;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#343A40;
+        text-transform:uppercase;
+        font-weight:700;
+    "
+>
+    SIMPLE
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:22px;
+        line-height:27px;
+        color:#1C6AC1;
+        font-weight:700;
+    "
+>
+    {{SIMPLE}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- MATCHS -->
+
+<td width="25%" class="mobile-cell-last" style="width:25%; padding-left:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#FFF9E2;
+        border:2px solid #FACD2C;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#343A40;
+        text-transform:uppercase;
+        font-weight:700;
+    "
+>
+    MATCHS JOUES
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:22px;
+        line-height:27px;
+        color:#1C6AC1;
+        font-weight:700;
+    "
+>
+    {{MATCHS_JOUES}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+
+<!-- ESPACEMENT -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td height="12" style="height:12px; font-size:0; line-height:0;">
+&nbsp;
+</td>
+</tr>
+</table>
+
+
+<!-- =====================================================
+     STATS 2
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+
+<!-- COMPTES -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding-right:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#F8F9FA;
+        border:1px solid #E9ECEF;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#6C757D;
+        text-transform:uppercase;
+        font-weight:600;
+    "
+>
+    COMPTES CREES
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:21px;
+        line-height:27px;
+        color:#343A40;
+        font-weight:700;
+    "
+>
+    {{COMPTES_CREES}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- RESERVATIONS -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#F8F9FA;
+        border:1px solid #E9ECEF;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#6C757D;
+        text-transform:uppercase;
+        font-weight:600;
+    "
+>
+    RESERVATIONS
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:21px;
+        line-height:27px;
+        color:#343A40;
+        font-weight:700;
+    "
+>
+    {{RESERVATIONS}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- MATCHS -->
+
+<td width="25%" class="mobile-cell" style="width:25%; padding:0 7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#F8F9FA;
+        border:1px solid #E9ECEF;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#6C757D;
+        text-transform:uppercase;
+        font-weight:600;
+    "
+>
+    MATCHS JOUES
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:21px;
+        line-height:27px;
+        color:#343A40;
+        font-weight:700;
+    "
+>
+    {{MATCHS_JOUES}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+
+<!-- ANNULATIONS -->
+
+<td width="25%" class="mobile-cell-last" style="width:25%; padding-left:7px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td
+    class="capsule"
+    align="center"
+    style="
+        padding:16px 8px;
+        background-color:#F8F9FA;
+        border:1px solid #E9ECEF;
+        border-radius:16px;
+    "
+>
+
+<div class="capsule-title"
+    style="
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:14px;
+        color:#6C757D;
+        text-transform:uppercase;
+        font-weight:600;
+    "
+>
+    ANNULATIONS
+</div>
+
+<div class="capsule-value"
+    style="
+        font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;
+        font-size:21px;
+        line-height:27px;
+        color:#343A40;
+        font-weight:700;
+    "
+>
+    {{ANNULATIONS}}
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+
+</tr>
+</table>
+
+
+<!-- =====================================================
+     LISTE ANNULATIONS
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    style="margin-top:20px;"
+>
+<tr>
+<td>
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+    class="list-row"
+    style="
+        width:100%;
+        background-color:#FFFFFF;
+        border:1px solid #E9ECEF;
+        border-left:5px solid #1C6AC1;
+        border-radius:12px;
+    "
+>
+<tr>
+
+<td
+    class="list-title-cell"
+    valign="middle"
+    style="
+        padding:13px 14px;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:11px;
+        line-height:16px;
+        font-weight:700;
+        color:#343A40;
+        text-transform:uppercase;
+        letter-spacing:0.4px;
+    "
+>
+    Détail annulations
+</td>
+
+<td
+    class="list-items-cell"
+    valign="middle"
+    align="right"
+    style="
+        padding:13px 14px;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:12px;
+        color:#343A40;
+    "
+>
+    {{DETAIL_ANNULATIONS}}
+</td>
+
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    border="0"
+>
+<tr>
+<td
+    class="footer"
+    align="center"
+    style="
+        padding:20px 0 5px 0;
+        font-family:Arial,Helvetica,sans-serif;
+        font-size:10px;
+        line-height:15px;
+        color:#ADB5BD;
+        font-weight:500;
+    "
+>
+    Banana Padel • Crest, Drôme (26) • Rapport de Performance
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+</table>
+
+<!-- FIN CONTAINER -->
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+```
