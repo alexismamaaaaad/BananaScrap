@@ -613,12 +613,12 @@ def main() -> None:
             capture_debug_artifacts(driver, "nav_annulations_failed")
             raise
 
-        date_input = wait_for_interactable(driver, By.ID, "date_annulation")
-        date_input.clear()
-        date_input.send_keys(today)
+        #date_input = wait_for_interactable(driver, By.ID, "date_annulation")
+        #date_input.clear()
+        #date_input.send_keys(today)
 
-        filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
-        filter_button.click()
+        #filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
+        #filter_button.click()
 
         wait_for_element(driver, By.XPATH, "//table[contains(@class, 'table-striped')]")
 
