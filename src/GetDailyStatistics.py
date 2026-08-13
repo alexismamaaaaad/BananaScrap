@@ -43,36 +43,67 @@ STATS_HEADERS = [
 ]
 
 
+def log_step(step_name: str):
+    """Affiche une bannière claire dans les logs GitHub Actions pour suivre la progression."""
+    print(f"\n==================================================")
+    print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] 🚀 ÉTAPE : {step_name}")
+    print(f"==================================================")
+
+
+def capture_debug_artifacts(driver: webdriver.Chrome, prefix: str = "debug_error"):
+    """Prend une capture d'écran et sauvegarde le HTML de la page actuelle."""
+    try:
+        results_dir = Path(__file__).resolve().parents[1] / "results"
+        results_dir.mkdir(exist_ok=True, parents=True)
+        
+        timestamp = datetime.now(timezone.utc).strftime("%H%M%S")
+        img_path = results_dir / f"{prefix}_{timestamp}.png"
+        html_path = results_dir / f"{prefix}_{timestamp}.html"
+
+        driver.save_screenshot(str(img_path))
+        html_path.write_text(driver.page_source, encoding="utf-8")
+
+        print(f"📸 DEBUG Artifacts sauvegardés :")
+        print(f"   - Image : {img_path}")
+        print(f"   - HTML  : {html_path}")
+        print(f"📍 URL courante : {driver.current_url}")
+    except Exception as e:
+        print(f"⚠️ Impossible de capturer les artefacts : {e}")
+
+
 def build_driver() -> webdriver.Chrome:
+    log_step("Initialisation du driver Chrome")
     options = Options()
         
-    # 1. Flags système obligatoires pour Linux / CI Containers
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     
-    # 2. Mock du User-Agent pour passer outre les blocs d'admin
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     options.add_argument(f"user-agent={user_agent}")
 
-    # 3. Supprimer "executable_path=chromedriver_path" -> Selenium Manager s'en charge
-    return webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
+    print("✅ Driver Chrome créé avec succès.")
+    return driver
 
 
 def wait_for_element(driver: webdriver.Chrome, by: str, value: str, timeout: int = 20):
+    print(f"⏳ Attente présence élément : ({by} = '{value}') [Timeout={timeout}s]")
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
 
 
 def wait_for_interactable(driver: webdriver.Chrome, by: str, value: str, timeout: int = 20):
+    print(f"⏳ Attente élément cliquable : ({by} = '{value}') [Timeout={timeout}s]")
     return WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((by, value))
     )
 
 
 def find_clickable_link(driver: webdriver.Chrome, text: str):
+    print(f"🔍 Recherche du lien cliquable contenant le texte : '{text}'")
     normalized_text = text.lower()
     candidates = [
         f"//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{normalized_text}')]",
@@ -82,16 +113,20 @@ def find_clickable_link(driver: webdriver.Chrome, text: str):
 
     for xpath in candidates:
         try:
-            return WebDriverWait(driver, 10).until(
+            elem = WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.XPATH, xpath))
             )
+            print(f"✅ Trouvé via XPath : {xpath}")
+            return elem
         except Exception:
             continue
 
+    print(f"❌ Échec de recherche du texte : '{text}'")
     raise TimeoutError(f"Unable to find clickable element containing text: {text}")
 
 
 def save_to_excel(row: list[str]) -> None:
+    log_step("Sauvegarde des données dans le fichier Excel")
     OUTPUT_XLSX_PATH.parent.mkdir(exist_ok=True)
 
     if OUTPUT_XLSX_PATH.exists():
@@ -157,10 +192,11 @@ def save_to_excel(row: list[str]) -> None:
         df = pd.concat([df, new_row], ignore_index=True)
 
     df.to_excel(OUTPUT_XLSX_PATH, index=False)
+    print("✅ Excel sauvegardé.")
+
 
 def extract_numeric_value(value: str):
     import re
-
     if value is None:
         return ""
 
@@ -183,13 +219,12 @@ def extract_numeric_value(value: str):
     except ValueError:
         return ""
     
+
 def get_month_progress_days() -> float:
     today = datetime.now(timezone.utc)
-    # Get total number of days in current month
     total_days = calendar.monthrange(today.year, today.month)[1]
-
-    # Percentage based on current day number
     return (today.day / total_days) * 100
+
 
 def build_daily_stats_email_html(stats_row: list[str]) -> str:
     if not OUTPUT_TEMPLATE_HTML_PATH.exists():
@@ -220,19 +255,16 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
     frais_day = to_number(stats_row[2]) if len(stats_row) > 2 else 0.0
     real_day = to_number(stats_row[3]) if len(stats_row) > 3 else 0.0
 
-    # percent relative to daily goal (negative means under goal)
     try:
         percent_goal = (ca_day / daily_goal) * 100 - 100
     except Exception:
         percent_goal = 0.0
 
     month_goal = 7200
-    # use the correct indexes for month totals (indices 4..6)
     ca_month = to_number(stats_row[4]) if len(stats_row) > 4 else 0.0
     frais_month = to_number(stats_row[5]) if len(stats_row) > 5 else 0.0
     real_month = to_number(stats_row[6]) if len(stats_row) > 6 else 0.0
     percent_of_month_done = get_month_progress_days()
-    # percent_of_month_done returns 0-100, scale to fraction for monthly goal
     try:
         goal_today_month = month_goal * percent_of_month_done  / 100
     except Exception:
@@ -242,14 +274,6 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
         percent_month_goal = (real_month / goal_today_month) * 100 - 100 if goal_today_month else 0.0
     except Exception:
         percent_month_goal = 0.0
-
-    print(f"Month_goal: {month_goal}")
-    print(f"ca_month: {ca_month}")
-    print(f"frais_month: {frais_month}")
-    print(f"real_month: {real_month}")
-    print(f"percent_of_month_done: {percent_of_month_done}")
-    print(f"goal_today_month: {goal_today_month}")
-    print(f"percent_month_goal: {percent_month_goal}")
 
     if percent_goal >= 0:
         DAY_GOAL_STYLE = "background-color:#F0FDF4;border:2px solid #22C55E;"
@@ -292,14 +316,12 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
         "{{GOAL_MONTH}}": ("✅ +" if percent_month_goal > 0 else "❌ ") + str(round(percent_month_goal, 2)) + "%",
         "{{CLASS_MONTH_GOAL}}": " capsulesuccess " if percent_month_goal > 0 else " capsuleerror ",
         "{{MONTH_TO_DATE}}": str(round(goal_today_month, 0)),
-
         "{{DAY_GOAL_STYLE}}": DAY_GOAL_STYLE,
         "{{DAY_GOAL_TITLE_STYLE}}": DAY_GOAL_TITLE_STYLE,
         "{{DAY_GOAL_VALUE_STYLE}}": DAY_GOAL_VALUE_STYLE,
         "{{MONTH_GOAL_STYLE}}": MONTH_GOAL_STYLE,
         "{{MONTH_GOAL_TITLE_STYLE}}": MONTH_GOAL_TITLE_STYLE,
         "{{MONTH_GOAL_VALUE_STYLE}}": MONTH_GOAL_VALUE_STYLE,
-
     }
 
     for placeholder, value in replacements.items():
@@ -314,28 +336,18 @@ def save_daily_stats_html(stats_row: list[str]) -> None:
         date_value = stats_row[0] if len(stats_row) > 0 else datetime.now(timezone.utc).strftime("%Y%m%d")
         output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
         output_html_path.write_text(html_body, encoding="utf-8")
-        print(f"HTML enregistré : {output_html_path}")
-        date_value = datetime.now(timezone.utc).strftime("%d/%m/%Y")
-
-        with open(output_html_path, "r", encoding="utf-8") as f:
-            html = f.read()
-
-       # resend.Emails.send({
-       #     "from": "Banana_Stats@resend.dev",
-       #     "to": ["roc4invest@gmail.com"],
-       #     "subject": f"Banana Stats - Résumé du jour : {date_value}",
-       #     "html": html
-       # })
-        
+        print(f"✅ HTML enregistré : {output_html_path}")
     except Exception as exc:
-        print(f"Échec de la génération du fichier HTML : {exc}")
+        print(f"⚠️ Échec de la génération du fichier HTML : {exc}")
 
 
 def count_slots_by_resource_id(driver: webdriver.Chrome):
+    print("📊 Comptage des créneaux dans le planning...")
     counts = {"DOUBLE 1": 0, "DOUBLE 2": 0, "Simple": 0}
     events = driver.find_elements(By.CSS_SELECTOR, ".fc-time-grid-event")
 
     if not events:
+        print("ℹ️ Aucun événement trouvé dans .fc-time-grid-event")
         return counts
 
     headers = []
@@ -403,58 +415,73 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
     
 
 def main() -> None:
+    log_step("Vérification des Variables d'Environnement")
+    print(f"  APP_LOG configuré : {'OUI' if LOGIN else 'NON'}")
+    print(f"  APP_PWD configuré : {'OUI' if PASSWORD else 'NON'}")
+    
+    if not LOGIN or not PASSWORD:
+        raise ValueError("❌ APP_LOG ou APP_PWD est manquant dans les secrets GitHub !")
+
     driver = build_driver()
     try:
-
+        log_step("Accès à l'URL LiveXperience")
+        print(f"Naviguer vers : {URL}")
         driver.get(URL)
+        print(f"📍 URL chargée : {driver.current_url}")
+        
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
-        # 1. Remplissage des champs
+        log_step("Connexion au Formulaire")
         login_input = WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.NAME, "login"))  # Ou id/xpath selon le formulaire LiveXperience
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='login'], input[name='mot_de_passe'], input[type='text'], input[type='email']"))
         )
         login_input.clear()
         login_input.send_keys(LOGIN)
+        print("✅ Identifiant renseigné.")
 
-        pwd_input = driver.find_element(By.NAME, "mot_de_passe")
+        pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='mot_de_passe'], input[name='password'], input[type='password']")
         pwd_input.clear()
         pwd_input.send_keys(PASSWORD)
+        print("✅ Mot de passe renseigné.")
 
-        # 2. Soumission via la touche ENTRÉE (évite le miss-click sur le bouton si un spinner overlay est présent)
-        pwd_input.send_keys(Keys.RETURN)
+        # Clic sur le bouton de connexion (ou validation par ENTRÉE)
+        try:
+            submit_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit'], .btn-success, .btn-primary")
+            driver.execute_script("arguments[0].click();", submit_btn)
+            print("🖱️ Bouton de soumission cliqué via JS.")
+        except Exception:
+            pwd_input.send_keys(Keys.RETURN)
+            print("⌨️ Soumission effectuée via la touche ENTRÉE.")
 
-        # 3. Laisser 2 secondes au JS du site pour déclencher l'animation de chargement / la requête
         time.sleep(2)
 
-        # 4. Attendre explicitement que le loader "#wait" disparaisse
+        # Masquage/attente du loader #wait
         try:
-            WebDriverWait(driver, 60).until(
+            print("⏳ Attente de la fin du chargement (#wait)...")
+            WebDriverWait(driver, 15).until(
                 EC.invisibility_of_element_located((By.ID, "wait"))
             )
+            print("✅ Loader #wait disparu.")
         except Exception:
-            print("Le spinner #wait ne s'est pas caché automatiquement, tentative de masquage forcé...")
-            # Si le spinner reste bloqué artificiellement en headless/CI, on le masque en JS
+            print("⚠️ Le spinner #wait ne s'est pas masqué automatiquement. Masquage JS forcé.")
             driver.execute_script("var w = document.getElementById('wait'); if(w) w.style.display='none';")
 
-        # 5. Attendre l'apparition effective du menu PAIEMENTS EN LIGNE
+        print(f"📍 URL après tentative de login : {driver.current_url}")
+
+        log_step("Validation du Dashboard & Navigation 'PAIEMENTS EN LIGNE'")
         try:
             menu_link = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]"))
             )
+            print("✅ Menu 'PAIEMENTS EN LIGNE' détecté !")
         except Exception as e:
-            # Sauvegarde l'image et le HTML pour l'artefact GitHub Actions
-            os.makedirs("results", exist_ok=True)
-            driver.save_screenshot("results/timeout_error.png")
-            with open("results/timeout_page.html", "w", encoding="utf-8") as f:
-                f.write(driver.page_source)
-            print("Capture d'écran sauvegardée dans results/timeout_error.png")
+            print("❌ Échec de détection du tableau de bord.")
+            capture_debug_artifacts(driver, "login_failed")
             raise e
-        # Faire un scroll vers l'élément si nécessaire puis cliquer via JS pour contourner d'éventuels overlays
-        driver.execute_script("arguments[0].click();", menu_link)
 
-        
+        # Essayer de lire le nombre de créneaux joués du jour
         try:
-            wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'DOUBLE 1')]")
+            wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'DOUBLE 1')]", timeout=10)
             time.sleep(2)
             slot_counts = count_slots_by_resource_id(driver)
             played_slots = sum(slot_counts.values())
@@ -466,56 +493,54 @@ def main() -> None:
             double1_slots = 0
             double2_slots = 0
             simple_slots = 0
-            print(f"Impossible de compter les créneaux joués : {exc}")
+            print(f"⚠️ Impossible de compter les créneaux joués : {exc}")
 
-        print("Nombre de créneaux joués :", played_slots)
+        print("📊 Stats Créneaux Joués :")
+        print("  - Total :", played_slots)
         print("  - DOUBLE 1 :", double1_slots)
         print("  - DOUBLE 2 :", double2_slots)
         print("  - Simple :", simple_slots)
 
+        log_step("Navigation vers Suivi des Paiements")
         try:
-            time.sleep(3)
+            time.sleep(2)
             menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
-            menu_link.click()
+            driver.execute_script("arguments[0].click();", menu_link)
             time.sleep(2)
 
             payment_link = find_clickable_link(driver, "suivi des paiements")
-            payment_link.click()
-            time.sleep(5)
+            driver.execute_script("arguments[0].click();", payment_link)
+            time.sleep(3)
         except Exception as exc:
-            print(f"Navigation vers paiements impossible : {exc}")
-            print(driver.page_source[:4000])
+            print(f"❌ Navigation vers paiements impossible : {exc}")
+            capture_debug_artifacts(driver, "nav_payments_failed")
             raise
 
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
+        print("✅ Page 'Liste des paiements web' atteinte.")
 
         date_input = wait_for_interactable(driver, By.ID, "date")
         date_input.clear()
         date_input.send_keys(today)
+        print(f"📅 Date appliquée : {today}")
 
         filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
         filter_button.click()
+        print("🔍 Filtrage appliqué.")
+        time.sleep(2)
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
-        texts: list[str] = []
-        for row in rows:
-            text = row.get_attribute("innerText") or row.text or ""
-            if text.strip():
-                texts.append(text.strip())
+        texts: list[str] = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
 
-        print("Nombre de lignes trouvées (première vue journée) :", len(texts))
+        print("📊 Lignes 'Encaisse' Journée :", len(texts))
         for text in texts:
-            print("- " + text)
+            print("  -> " + text)
 
-        total_paye = ""
-        total_frais = ""
-        total_club = ""
+        total_paye = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
+        total_frais = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
+        total_club = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
 
-        if texts:
-            total_paye = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
-            total_frais = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
-            total_club = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
-
+        log_step("Récupération du Récapitulatif Mensuel")
         recap_button = wait_for_interactable(driver, By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'récap mensuel')]")
         recap_button.click()
         time.sleep(2)
@@ -523,25 +548,17 @@ def main() -> None:
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
-        texts = []
-        for row in rows:
-            text = row.get_attribute("innerText") or row.text or ""
-            if text.strip():
-                texts.append(text.strip())
+        texts = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
 
-        print("Nombre de lignes trouvées (après clic sur Récap mensuel) :", len(texts))
+        print("📊 Lignes 'Encaisse' Mois :", len(texts))
         for text in texts:
-            print("- " + text)
+            print("  -> " + text)
 
-        total_paye_mois = ""
-        total_frais_mois = ""
-        total_club_mois = ""
+        total_paye_mois = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
+        total_frais_mois = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
+        total_club_mois = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
 
-        if texts:
-            total_paye_mois = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
-            total_frais_mois = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
-            total_club_mois = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
-
+        log_step("Récupération des Badges (Inscriptions & Réservations)")
         try:
             inscrit_badge = driver.find_element(
                 By.XPATH,
@@ -560,20 +577,21 @@ def main() -> None:
         except Exception:
             reservations = "0"
 
-        print("Nombre d'inscrits du jour :", inscriptions)
-        print("Nombre de créneaux réservés :", reservations)
+        print("👤 Inscrits du jour :", inscriptions)
+        print("📅 Créneaux réservés :", reservations)
 
+        log_step("Navigation vers Suivi des Annulations")
         try:
             menu_link = find_clickable_link(driver, "RESERVATIONS")
-            menu_link.click()
-            time.sleep(3)
+            driver.execute_script("arguments[0].click();", menu_link)
+            time.sleep(2)
 
             payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
-            payment_link.click()
+            driver.execute_script("arguments[0].click();", payment_link)
             time.sleep(3)
         except Exception as exc:
-            print(f"Navigation vers annulations impossible : {exc}")
-            print(driver.page_source[:4000])
+            print(f"❌ Navigation vers annulations impossible : {exc}")
+            capture_debug_artifacts(driver, "nav_annulations_failed")
             raise
 
         date_input = wait_for_interactable(driver, By.ID, "date_annulation")
@@ -600,8 +618,7 @@ def main() -> None:
 
             detail = f"{cancellation_slot} | {client} | {terrain} | {tarif} | {moyen_annulation}"
             cancellation_details.append(detail)
-
-            print(f"  Creneau annulé {index}: {cancellation_slot} / {client} / {terrain} / {tarif} / {moyen_annulation}")
+            print(f"  ❌ Créneau annulé #{index}: {detail}")
 
         stats_row = [
             str(datetime.now(timezone.utc).strftime("%Y%m%d")),
@@ -621,15 +638,20 @@ def main() -> None:
             "\n".join(cancellation_details),
         ]
 
-        try:
-            save_to_excel(stats_row)
-            save_daily_stats_html(stats_row)
-            print(f"Statistiques enregistrées dans le fichier local : {OUTPUT_XLSX_PATH}")
-        except Exception as exc:
-            print(f"Échec de l'écriture dans le fichier Excel : {exc}")
+        log_step("Sauvegarde et Génération du Rapport Final")
+        save_to_excel(stats_row)
+        save_daily_stats_html(stats_row)
+        print("🎉 TRAITEMENT TERMINÉ AVEC SUCCÈS !")
+
+    except Exception as global_exc:
+        log_step("ERREUR CRITIQUE DÉTECTÉE")
+        print(f"💥 Exception : {global_exc}")
+        capture_debug_artifacts(driver, "unhandled_exception")
+        raise global_exc
 
     finally:
         driver.quit()
+        print("🚪 Navigateur Chrome fermé.")
 
 
 if __name__ == "__main__":
