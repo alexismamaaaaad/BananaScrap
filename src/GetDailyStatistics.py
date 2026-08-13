@@ -44,27 +44,19 @@ STATS_HEADERS = [
 
 
 def build_driver() -> webdriver.Chrome:
-    options = webdriver.ChromeOptions()
-    # Required for headful-less execution in CI
-    # options.add_argument("--headless=new")  # Use updated headless mode
-    options.add_argument("--no-sandbox")   # Required in Linux container environments
-    options.add_argument("--disable-dev-shm-usage")  # Overcomes limited resource problems (/dev/shm)
+    options = Options()
+        
+    # 1. Flags système obligatoires pour Linux / CI Containers
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    
+    # 2. Mock du User-Agent pour passer outre les blocs d'admin
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    options.add_argument(f"user-agent={user_agent}")
 
-    chrome_binary = (
-        shutil.which("chromium")
-        or shutil.which("chromium-browser")
-        or shutil.which("google-chrome")
-        or shutil.which("google-chrome-stable")
-    )
-    if chrome_binary:
-        options.binary_location = chrome_binary
-
-    chromedriver_path = shutil.which("chromedriver")
-    if chromedriver_path:
-        return webdriver.Chrome(service=webdriver.ChromeService(executable_path=chromedriver_path), options=options)
-
+    # 3. Supprimer "executable_path=chromedriver_path" -> Selenium Manager s'en charge
     return webdriver.Chrome(options=options)
 
 
