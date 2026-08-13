@@ -416,8 +416,17 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
 
 def main() -> None:
     log_step("Vérification des Variables d'Environnement")
-    print(f"  APP_LOG configuré : {'OUI' if LOGIN else 'NON'}")
-    print(f"  APP_PWD configuré : {'OUI' if PASSWORD else 'NON'}")
+    
+    def mask_secret(val: str) -> str:
+        if not val:
+            return "NON DÉFINI / VIDE"
+        val_clean = val.strip()
+        if len(val_clean) <= 2:
+            return f"'{val_clean[0]}*' (longueur: {len(val)})"
+        return f"'{val_clean[0]}{'*' * (len(val_clean) - 2)}{val_clean[-1]}' (longueur brute: {len(val)}, nettoyée: {len(val_clean)})"
+
+    print(f"  APP_LOG : {mask_secret(LOGIN)}")
+    print(f"  APP_PWD : {mask_secret(PASSWORD)}")
     
     if not LOGIN or not PASSWORD:
         raise ValueError("❌ APP_LOG ou APP_PWD est manquant dans les secrets GitHub !")
@@ -432,28 +441,33 @@ def main() -> None:
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
         log_step("Connexion au Formulaire")
+        
+        # Nettoyage des éventuels espaces/sauts de ligne invisibles dans GitHub Secrets
+        clean_login = LOGIN.strip()
+        clean_pwd = PASSWORD.strip()
+
         login_input = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='login'], input[name='mot_de_passe'], input[type='text'], input[type='email']"))
         )
         login_input.clear()
-        login_input.send_keys(LOGIN)
-        print("✅ Identifiant renseigné.")
+        login_input.send_keys(clean_login)
+        print(f"✅ Identifiant injecté dans le champ (valeur injectée: {clean_login[:2]}***{clean_login[-1] if len(clean_login)>1 else ''})")
 
         pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='mot_de_passe'], input[name='password'], input[type='password']")
         pwd_input.clear()
-        pwd_input.send_keys(PASSWORD)
-        print("✅ Mot de passe renseigné.")
+        pwd_input.send_keys(clean_pwd)
+        print(f"✅ Mot de passe injecté dans le champ (valeur injectée: {clean_pwd[:1]}***{clean_pwd[-1] if len(clean_pwd)>1 else ''})")
 
-        # Clic sur le bouton de connexion (ou validation par ENTRÉE)
+        # Soumission explicite du formulaire
         try:
-            submit_btn = driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit'], .btn-success, .btn-primary")
-            driver.execute_script("arguments[0].click();", submit_btn)
-            print("🖱️ Bouton de soumission cliqué via JS.")
+            form = pwd_input.find_element(By.XPATH, "./ancestor::form")
+            driver.execute_script("arguments[0].submit();", form)
+            print("🚀 Formulaire soumis via JS (form.submit()).")
         except Exception:
             pwd_input.send_keys(Keys.RETURN)
             print("⌨️ Soumission effectuée via la touche ENTRÉE.")
 
-        time.sleep(2)
+        time.sleep(3)
 
         # Masquage/attente du loader #wait
         try:
