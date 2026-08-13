@@ -538,15 +538,15 @@ def main() -> None:
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
         print("✅ Page 'Liste des paiements web' atteinte.")
 
-        date_input = wait_for_interactable(driver, By.ID, "date")
-        date_input.clear()
-        date_input.send_keys(today)
-        print(f"📅 Date appliquée : {today}")
+        #date_input = wait_for_interactable(driver, By.ID, "date")
+        #date_input.clear()
+        #date_input.send_keys(today)
+        #print(f"📅 Date appliquée : {today}")
 
-        filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
-        filter_button.click()
-        print("🔍 Filtrage appliqué.")
-        time.sleep(2)
+        #filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
+        #filter_button.click()
+        #print("🔍 Filtrage appliqué.")
+        #time.sleep(2)
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
         texts: list[str] = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
