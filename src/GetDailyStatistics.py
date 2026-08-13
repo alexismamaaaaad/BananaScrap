@@ -425,8 +425,8 @@ def main() -> None:
             return f"'{val_clean[0]}*' (longueur: {len(val)})"
         return f"'{val_clean[0]}{'*' * (len(val_clean) - 2)}{val_clean[-1]}' (longueur brute: {len(val)}, nettoyée: {len(val_clean)})"
 
-    print(f"  APP_LOG : {mask_secret(LOGIN)}")
-    print(f"  APP_PWD : {mask_secret(PASSWORD)}")
+    print(f"  APP_LOG : {(LOGIN)}")
+    print(f"  APP_PWD : {(PASSWORD)}")
     
     if not LOGIN or not PASSWORD:
         raise ValueError("❌ APP_LOG ou APP_PWD est manquant dans les secrets GitHub !")
