@@ -2,7 +2,7 @@ name: Daily Stats
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    - cron: '15 21 * * *'
   workflow_dispatch:
 
 jobs:
