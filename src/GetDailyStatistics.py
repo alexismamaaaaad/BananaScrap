@@ -450,13 +450,18 @@ def main() -> None:
             EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='login'], input[name='mot_de_passe'], input[type='text'], input[type='email']"))
         )
         login_input.clear()
-        login_input.send_keys(clean_login)
+        driver.execute_script("arguments[0].value = arguments[1];", login_input, clean_login)        
         print(f"✅ Identifiant injecté dans le champ (valeur injectée: {clean_login[:2]}***{clean_login[-1] if len(clean_login)>1 else ''})")
 
         pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='mot_de_passe'], input[name='password'], input[type='password']")
         pwd_input.clear()
-        pwd_input.send_keys(clean_pwd)
+        driver.execute_script("arguments[0].value = arguments[1];", pwd_input, clean_pwd)
         print(f"✅ Mot de passe injecté dans le champ (valeur injectée: {clean_pwd[:1]}***{clean_pwd[-1] if len(clean_pwd)>1 else ''})")
+
+        val_login_check = driver.execute_script("return arguments[0].value;", login_input)
+        val_pwd_check = driver.execute_script("return arguments[0].value;", pwd_input)
+        print(f"🔍 Valeur réelle dans le DOM (Login) : {val_login_check[:2]}*** (Minuscules respectées : {any(c.islower() for c in val_login_check)})")
+        print(f"🔍 Valeur réelle dans le DOM (PWD)   : {val_pwd_check[:1]}*** (Minuscules respectées : {any(c.islower() for c in val_pwd_check)})")
 
         # Soumission explicite du formulaire
         try:
