@@ -46,7 +46,7 @@ STATS_HEADERS = [
 def build_driver() -> webdriver.Chrome:
     options = webdriver.ChromeOptions()
     # Required for headful-less execution in CI
-    options.add_argument("--headless=new")  # Use updated headless mode
+    # options.add_argument("--headless=new")  # Use updated headless mode
     options.add_argument("--no-sandbox")   # Required in Linux container environments
     options.add_argument("--disable-dev-shm-usage")  # Overcomes limited resource problems (/dev/shm)
     options.add_argument("--disable-gpu")
@@ -90,7 +90,7 @@ def find_clickable_link(driver: webdriver.Chrome, text: str):
 
     for xpath in candidates:
         try:
-            return WebDriverWait(driver, 60).until(
+            return WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, xpath))
             )
         except Exception:
@@ -413,11 +413,9 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
 def main() -> None:
     driver = build_driver()
     try:
-        time.sleep(10)
 
         driver.get(URL)
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
-        time.sleep(60)
 
         login_input = wait_for_interactable(driver, By.ID, "login")
         password_input = wait_for_interactable(driver, By.ID, "mot_de_passe")
@@ -456,7 +454,7 @@ def main() -> None:
         print("  - Simple :", simple_slots)
 
         try:
-            time.sleep(10)
+            time.sleep(3)
             menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
             menu_link.click()
             time.sleep(2)
@@ -548,11 +546,11 @@ def main() -> None:
         try:
             menu_link = find_clickable_link(driver, "RESERVATIONS")
             menu_link.click()
-            time.sleep(5)
+            time.sleep(3)
 
             payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
             payment_link.click()
-            time.sleep(5)
+            time.sleep(3)
         except Exception as exc:
             print(f"Navigation vers annulations impossible : {exc}")
             print(driver.page_source[:4000])
