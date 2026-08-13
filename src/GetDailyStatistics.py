@@ -416,7 +416,7 @@ def main() -> None:
         login_input.clear()
         login_input.send_keys(LOGIN)
 
-        pwd_input = driver.find_element(By.NAME, "password")
+        pwd_input = driver.find_element(By.NAME, "mot_de_passe")
         pwd_input.clear()
         pwd_input.send_keys(PASSWORD)
 
