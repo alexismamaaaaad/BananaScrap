@@ -483,8 +483,6 @@ def main() -> None:
             pwd_input.send_keys(Keys.RETURN)
             print("⌨️ Soumission effectuée via la touche ENTRÉE.")
 
-        time.sleep(3)
-
         # Masquage/attente du loader #wait
         try:
             print("⏳ Attente de la fin du chargement (#wait)...")
@@ -512,7 +510,6 @@ def main() -> None:
         # Essayer de lire le nombre de créneaux joués du jour
         try:
             wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'DOUBLE 1')]", timeout=10)
-            time.sleep(2)
             slot_counts = count_slots_by_resource_id(driver)
             played_slots = sum(slot_counts.values())
             double1_slots = slot_counts["DOUBLE 1"]
@@ -533,14 +530,11 @@ def main() -> None:
 
         log_step("Navigation vers Suivi des Paiements")
         try:
-            time.sleep(2)
             menu_link = find_clickable_link(driver, "PAIEMENTS EN LIGNE")
             driver.execute_script("arguments[0].click();", menu_link)
-            time.sleep(2)
 
             payment_link = find_clickable_link(driver, "suivi des paiements")
             driver.execute_script("arguments[0].click();", payment_link)
-            time.sleep(3)
         except Exception as exc:
             print(f"❌ Navigation vers paiements impossible : {exc}")
             capture_debug_artifacts(driver, "nav_payments_failed")
@@ -548,16 +542,6 @@ def main() -> None:
 
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
         print("✅ Page 'Liste des paiements web' atteinte.")
-
-        #date_input = wait_for_interactable(driver, By.ID, "date")
-        #date_input.clear()
-        #date_input.send_keys(today)
-        #print(f"📅 Date appliquée : {today}")
-
-        #filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
-        #filter_button.click()
-        #print("🔍 Filtrage appliqué.")
-        #time.sleep(2)
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
         texts: list[str] = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
@@ -573,7 +557,6 @@ def main() -> None:
         log_step("Récupération du Récapitulatif Mensuel")
         recap_button = wait_for_interactable(driver, By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'récap mensuel')]")
         recap_button.click()
-        time.sleep(2)
 
         wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
 
@@ -614,22 +597,13 @@ def main() -> None:
         try:
             menu_link = find_clickable_link(driver, "RESERVATIONS")
             driver.execute_script("arguments[0].click();", menu_link)
-            time.sleep(2)
 
             payment_link = find_clickable_link(driver, "SUIVI DES ANNULATIONS")
             driver.execute_script("arguments[0].click();", payment_link)
-            time.sleep(3)
         except Exception as exc:
             print(f"❌ Navigation vers annulations impossible : {exc}")
             capture_debug_artifacts(driver, "nav_annulations_failed")
             raise
-
-        #date_input = wait_for_interactable(driver, By.ID, "date_annulation")
-        #date_input.clear()
-        #date_input.send_keys(today)
-
-        #filter_button = wait_for_interactable(driver, By.XPATH, "//button[contains(normalize-space(.), 'Filtrer')]")
-        #filter_button.click()
 
         wait_for_element(driver, By.XPATH, "//table[contains(@class, 'table-striped')]")
 
