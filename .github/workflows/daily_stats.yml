@@ -28,13 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install python-dotenv resend pandas openpyxl selenium
 
-      - name: Run stats script
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Run stats script with Virtual Display
         env:
           APP_LOG: ${{ secrets.APP_LOG}}
           APP_PWD: ${{ secrets.APP_PWD }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          python src/GetDailyStatistics.py
+          xvfb-run --auto-servernum python src/GetDailyStatistics.py
 
       - name: Upload results
         if: always()
