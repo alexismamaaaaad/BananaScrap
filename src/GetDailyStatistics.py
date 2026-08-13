@@ -652,7 +652,7 @@ def main() -> None:
 
         # --- Check if empty after the loop ---
         if not cancellation_details:
-            message = "Aucun créneau annulé aujourdhui !"
+            message = " Aucun créneau annulé aujourdhui !"
             cancellation_details.append(message)
             print(f"  ℹ️ {message}")
 
