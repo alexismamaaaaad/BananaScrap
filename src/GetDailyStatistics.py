@@ -337,6 +337,17 @@ def save_daily_stats_html(stats_row: list[str]) -> None:
         output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
         output_html_path.write_text(html_body, encoding="utf-8")
         print(f"✅ HTML enregistré : {output_html_path}")
+
+        with open(output_html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        resend.Emails.send({
+            "from": "Banana_Stats@resend.dev",
+            "to": ["roc4invest@gmail.com"],
+            "subject": f"Banana Stats - Résumé du jour : {date_value}",
+            "html": html
+        })
+
     except Exception as exc:
         print(f"⚠️ Échec de la génération du fichier HTML : {exc}")
 
@@ -425,8 +436,8 @@ def main() -> None:
             return f"'{val_clean[0]}*' (longueur: {len(val)})"
         return f"'{val_clean[0]}{'*' * (len(val_clean) - 2)}{val_clean[-1]}' (longueur brute: {len(val)}, nettoyée: {len(val_clean)})"
 
-    print(f"  APP_LOG : {(LOGIN)}")
-    print(f"  APP_PWD : {(PASSWORD)}")
+    #print(f"  APP_LOG : {(LOGIN)}")
+    #print(f"  APP_PWD : {(PASSWORD)}")
     
     if not LOGIN or not PASSWORD:
         raise ValueError("❌ APP_LOG ou APP_PWD est manquant dans les secrets GitHub !")
@@ -638,6 +649,12 @@ def main() -> None:
             detail = f"{cancellation_slot} | {client} | {terrain} | {tarif} | {moyen_annulation}"
             cancellation_details.append(detail)
             print(f"  ❌ Créneau annulé #{index}: {detail}")
+
+        # --- Check if empty after the loop ---
+        if not cancellation_details:
+            message = "Aucun créneau annulé aujourdhui !"
+            cancellation_details.append(message)
+            print(f"  ℹ️ {message}")
 
         stats_row = [
             str(datetime.now(timezone.utc).strftime("%Y%m%d")),
