@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-
+from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import resend
 from dotenv import load_dotenv
@@ -417,9 +417,9 @@ def main() -> None:
         password_input.clear()
         login_input.send_keys(LOGIN)
         password_input.send_keys(PASSWORD)
-
-        submit_button = wait_for_interactable(driver, By.CSS_SELECTOR, "input[type='submit']")
-        submit_button.click()
+        password_input.send_keys(Keys.RETURN)
+        #submit_button = wait_for_interactable(driver, By.CSS_SELECTOR, "input[type='submit']")
+        #submit_button.click()
 
         # Allow some time for the app to navigate after login
         time.sleep(3)
