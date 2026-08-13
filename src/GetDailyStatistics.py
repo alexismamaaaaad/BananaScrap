@@ -409,20 +409,40 @@ def main() -> None:
         driver.get(URL)
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
-        login_input = wait_for_interactable(driver, By.ID, "login")
-        password_input = wait_for_interactable(driver, By.ID, "mot_de_passe")
-        time.sleep(3)
-
+        # 1. Remplissage des champs
+        login_input = WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable((By.NAME, "login"))  # Ou id/xpath selon le formulaire LiveXperience
+        )
         login_input.clear()
-        password_input.clear()
         login_input.send_keys(LOGIN)
-        password_input.send_keys(PASSWORD)
-        password_input.send_keys(Keys.RETURN)
-        #submit_button = wait_for_interactable(driver, By.CSS_SELECTOR, "input[type='submit']")
-        #submit_button.click()
 
-        # Allow some time for the app to navigate after login
-        time.sleep(3)
+        pwd_input = driver.find_element(By.NAME, "password")
+        pwd_input.clear()
+        pwd_input.send_keys(PASSWORD)
+
+        # 2. Soumission via la touche ENTRÉE (évite le miss-click sur le bouton si un spinner overlay est présent)
+        pwd_input.send_keys(Keys.RETURN)
+
+        # 3. Laisser 2 secondes au JS du site pour déclencher l'animation de chargement / la requête
+        time.sleep(2)
+
+        # 4. Attendre explicitement que le loader "#wait" disparaisse
+        try:
+            WebDriverWait(driver, 60).until(
+                EC.invisibility_of_element_located((By.ID, "wait"))
+            )
+        except Exception:
+            print("Le spinner #wait ne s'est pas caché automatiquement, tentative de masquage forcé...")
+            # Si le spinner reste bloqué artificiellement en headless/CI, on le masque en JS
+            driver.execute_script("var w = document.getElementById('wait'); if(w) w.style.display='none';")
+
+        # 5. Attendre l'apparition effective du menu PAIEMENTS EN LIGNE
+        menu_link = WebDriverWait(driver, 60).until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]"))
+        )
+
+        # Faire un scroll vers l'élément si nécessaire puis cliquer via JS pour contourner d'éventuels overlays
+        driver.execute_script("arguments[0].click();", menu_link)
 
         
         try:
