@@ -451,12 +451,12 @@ def main() -> None:
         )
         login_input.clear()
         driver.execute_script("arguments[0].value = arguments[1];", login_input, clean_login)        
-        print(f"✅ Identifiant injecté dans le champ (valeur injectée: {clean_login[:2]}***{clean_login[-1] if len(clean_login)>1 else ''})")
+        print(f"✅ Identifiant injecté dans le champ (valeur injectée: {clean_login})")
 
         pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='mot_de_passe'], input[name='password'], input[type='password']")
         pwd_input.clear()
         driver.execute_script("arguments[0].value = arguments[1];", pwd_input, clean_pwd)
-        print(f"✅ Mot de passe injecté dans le champ (valeur injectée: {clean_pwd[:1]}***{clean_pwd[-1] if len(clean_pwd)>1 else ''})")
+        print(f"✅ Mot de passe injecté dans le champ (valeur injectée: {clean_pwd})")
 
         val_login_check = driver.execute_script("return arguments[0].value;", login_input)
         val_pwd_check = driver.execute_script("return arguments[0].value;", pwd_input)
