@@ -437,10 +437,18 @@ def main() -> None:
             driver.execute_script("var w = document.getElementById('wait'); if(w) w.style.display='none';")
 
         # 5. Attendre l'apparition effective du menu PAIEMENTS EN LIGNE
-        menu_link = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]"))
-        )
-
+        try:
+            menu_link = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]"))
+            )
+        except Exception as e:
+            # Sauvegarde l'image et le HTML pour l'artefact GitHub Actions
+            os.makedirs("results", exist_ok=True)
+            driver.save_screenshot("results/timeout_error.png")
+            with open("results/timeout_page.html", "w", encoding="utf-8") as f:
+                f.write(driver.page_source)
+            print("Capture d'écran sauvegardée dans results/timeout_error.png")
+            raise e
         # Faire un scroll vers l'élément si nécessaire puis cliquer via JS pour contourner d'éventuels overlays
         driver.execute_script("arguments[0].click();", menu_link)
 
