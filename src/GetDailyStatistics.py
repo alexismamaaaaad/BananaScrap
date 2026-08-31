@@ -608,7 +608,7 @@ def main() -> None:
         wait_for_element(driver, By.XPATH, "//table[contains(@class, 'table-striped')]")
 
         rows = driver.find_elements(By.CSS_SELECTOR, "table.table-striped tbody tr")
-        cancellation_details: list[str] = []
+        cancellation_details: list[str] | None = []
         for index, row in enumerate(rows, start=1):
             cells = row.find_elements(By.TAG_NAME, "td")
             if len(cells) < 8:
@@ -624,11 +624,10 @@ def main() -> None:
             cancellation_details.append(detail)
             print(f"  ❌ Créneau annulé #{index}: {detail}")
 
-        # --- Check if empty after the loop ---
-        if not cancellation_details:
-            message = " Aucun créneau annulé aujourdhui !"
-            cancellation_details.append(message)
-            print(f"  ℹ️ {message}")
+        if cancellation_details is None:
+            cancellation_details = []
+
+        cancellation_count = len(cancellation_details) if cancellation_details is not None else 0
 
         stats_row = [
             str(datetime.now(timezone.utc).strftime("%Y%m%d")),
@@ -644,9 +643,15 @@ def main() -> None:
             str(double1_slots),
             str(double2_slots),
             str(simple_slots),
-            str(len(cancellation_details)),
-            "\n".join(cancellation_details),
+            str(cancellation_count),
+            "\n".join(cancellation_details or []),
         ]
+
+        # --- Check if empty after the loop ---
+        if not cancellation_details:
+            message = " Aucun créneau annulé aujourdhui !"
+            cancellation_details.append(message)
+            print(f"  ℹ️ {message}")
 
         log_step("Sauvegarde et Génération du Rapport Final")
         save_to_excel(stats_row)
