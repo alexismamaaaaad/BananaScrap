@@ -1,8 +1,11 @@
 name: Daily Stats
 
 on:
-  schedule:
-    - cron: '15 21 * * *'
+  # Permet le déclenchement via cron-job.org
+  repository_dispatch:
+    types: [run-daily-task]
+
+  # Permet aussi de le lancer manuellement si besoin depuis l'interface GitHub
   workflow_dispatch:
 
 jobs:
