@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
 URL = "https://gestion.livexperience.fr/"
-
+ 
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 LOGIN = os.getenv("APP_LOG")
