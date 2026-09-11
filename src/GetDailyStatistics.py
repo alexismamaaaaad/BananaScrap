@@ -1,28 +1,41 @@
 import calendar
+import json
 import os
-import shutil
-import time
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from selenium.webdriver.common.keys import Keys
+
+import gspread
 import pandas as pd
 import resend
 from dotenv import load_dotenv
+from google.oauth2.service_account import Credentials
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
 
 URL = "https://gestion.livexperience.fr/"
- 
+
+# 1. Définir les scopes d'accès
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
+SPREADSHEET_KEY = "1lxlpYSTBcErHX_40_t3ygcLFmLrMWKwS8SSgxCZSlRc"
+
 load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 LOGIN = os.getenv("APP_LOG")
 PASSWORD = os.getenv("APP_PWD")
 
 OUTPUT_XLSX_PATH = Path(__file__).resolve().parents[1] / "results" / "DailyStats.xlsx"
-OUTPUT_TEMPLATE_HTML_PATH = Path(__file__).resolve().parents[1] / "results" / "template_daily_result.html"
+OUTPUT_TEMPLATE_HTML_PATH = (
+    Path(__file__).resolve().parents[1] / "results" / "template_daily_result.html"
+)
 
 STATS_HEADERS = [
     "Date yyyymmdd",
@@ -43,11 +56,26 @@ STATS_HEADERS = [
 ]
 
 
+def get_gspread_client():
+    SCOPES = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    if os.path.exists("GoogleCloudCredentials.json"):
+        creds = Credentials.from_service_account_file("GoogleCloudCredentials.json", scopes=SCOPES)
+    elif "GOOGLE_CREDENTIALS" in os.environ:
+        creds_json = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+        creds = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
+    else:
+        raise ValueError("Aucun identifiant Google trouvé.")
+    return gspread.authorize(creds)
+
+
 def log_step(step_name: str):
     """Affiche une bannière claire dans les logs GitHub Actions pour suivre la progression."""
-    print(f"\n==================================================")
+    print("\n==================================================")
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] 🚀 ÉTAPE : {step_name}")
-    print(f"==================================================")
+    print("==================================================")
 
 
 def capture_debug_artifacts(driver: webdriver.Chrome, prefix: str = "debug_error"):
@@ -55,7 +83,7 @@ def capture_debug_artifacts(driver: webdriver.Chrome, prefix: str = "debug_error
     try:
         results_dir = Path(__file__).resolve().parents[1] / "results"
         results_dir.mkdir(exist_ok=True, parents=True)
-        
+
         timestamp = datetime.now(timezone.utc).strftime("%H%M%S")
         img_path = results_dir / f"{prefix}_{timestamp}.png"
         html_path = results_dir / f"{prefix}_{timestamp}.html"
@@ -74,12 +102,12 @@ def capture_debug_artifacts(driver: webdriver.Chrome, prefix: str = "debug_error
 def build_driver() -> webdriver.Chrome:
     log_step("Initialisation du driver Chrome")
     options = Options()
-        
+
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    
+
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     options.add_argument(f"user-agent={user_agent}")
 
@@ -95,11 +123,11 @@ def wait_for_element(driver: webdriver.Chrome, by: str, value: str, timeout: int
     )
 
 
-def wait_for_interactable(driver: webdriver.Chrome, by: str, value: str, timeout: int = 20):
+def wait_for_interactable(
+    driver: webdriver.Chrome, by: str, value: str, timeout: int = 20
+):
     print(f"⏳ Attente élément cliquable : ({by} = '{value}') [Timeout={timeout}s]")
-    return WebDriverWait(driver, timeout).until(
-        EC.element_to_be_clickable((by, value))
-    )
+    return WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
 
 
 def find_clickable_link(driver: webdriver.Chrome, text: str):
@@ -148,6 +176,17 @@ def save_to_excel(row: list[str]) -> None:
             return str(int(float(text)))
         return text
 
+    def normalize_number(value):
+        if value is None or value == "":
+            return value
+        if isinstance(value, str):
+            text = value.replace("\u00a0", "").replace(" ", "")
+            text = text.replace("€", "")
+            if "," in text and "." not in text:
+                text = text.replace(",", ".")
+            value = text
+        return pd.to_numeric(value, errors="coerce")
+
     if date_column in df.columns:
         df[date_column] = df[date_column].apply(normalize_date)
 
@@ -171,15 +210,30 @@ def save_to_excel(row: list[str]) -> None:
         "Annulations",
     ]:
         if column in df.columns:
-            df[column] = pd.to_numeric(df[column], errors="coerce")
+            df[column] = df[column].map(normalize_number)
         if column in new_row.columns:
-            new_row[column] = pd.to_numeric(new_row[column], errors="coerce")
+            new_row[column] = new_row[column].map(normalize_number)
+
+    for column in [
+        "Total Payé",
+        "Total Frais",
+        "Total Club",
+        "Total Payé Mois",
+        "Total Frais Mois",
+        "Total Club Mois",
+    ]:
+        if column in df.columns:
+            df[column] = df[column].astype("float64")
+        if column in new_row.columns:
+            new_row[column] = new_row[column].astype("float64")
 
     date_value = normalize_date(row[0])
     existing_match = None
 
     if date_column in df.columns:
-        for idx, existing_value in enumerate(df[date_column].astype(str).str.strip().tolist()):
+        for idx, existing_value in enumerate(
+            df[date_column].astype(str).str.strip().tolist()
+        ):
             if normalize_date(existing_value) == date_value:
                 existing_match = idx
                 break
@@ -195,8 +249,58 @@ def save_to_excel(row: list[str]) -> None:
     print("✅ Excel sauvegardé.")
 
 
+def save_to_google_sheet(row: list[str]) -> None:
+    log_step("Sauvegarde des données dans le fichier Excel")
+
+    client = get_gspread_client()
+    spreadsheet = client.open_by_key(SPREADSHEET_KEY)
+    sheet = spreadsheet.sheet1
+
+    def normalize_date(value) -> str:
+        text = str(value).strip()
+        if not text:
+            return ""
+        if text.replace(".", "", 1).isdigit():
+            return str(int(float(text)))
+        return text
+
+    values = sheet.get_all_values()
+    if not values:
+        sheet.append_row(STATS_HEADERS, value_input_option="USER_ENTERED")
+        values = [STATS_HEADERS]
+
+    headers = values[0]
+    if "Date yyyymmdd" not in headers:
+        raise ValueError("La colonne 'Date yyyymmdd' est absente de la feuille Google.")
+
+    date_index = headers.index("Date yyyymmdd")
+    date_value = normalize_date(row[0])
+    existing_sheet_row = None
+
+    for sheet_row, values_row in enumerate(values[1:], start=2):
+        if date_index < len(values_row) and normalize_date(values_row[date_index]) == date_value:
+            existing_sheet_row = sheet_row
+            break
+
+    row_values = list(row)
+    if existing_sheet_row is not None:
+        # Met à jour uniquement la ligne de la date trouvée; toutes les autres restent intactes.
+        sheet.update(
+            f"A{existing_sheet_row}:O{existing_sheet_row}",
+            [row_values],
+            value_input_option="USER_ENTERED",
+        )
+        print(f"✅ Ligne du {date_value} mise à jour sans toucher aux autres lignes.")
+    else:
+        sheet.append_row(row_values, value_input_option="USER_ENTERED")
+        print(f"✅ Nouvelle ligne du {date_value} ajoutée sans modifier les lignes existantes.")
+
+    print("✅ Excel sauvegardé.")
+
+
 def extract_numeric_value(value: str):
     import re
+
     if value is None:
         return ""
 
@@ -218,7 +322,7 @@ def extract_numeric_value(value: str):
         return float(cleaned)
     except ValueError:
         return ""
-    
+
 
 def get_month_progress_days() -> float:
     today = datetime.now(timezone.utc)
@@ -228,16 +332,43 @@ def get_month_progress_days() -> float:
 
 def build_daily_stats_email_html(stats_row: list[str]) -> str:
     if not OUTPUT_TEMPLATE_HTML_PATH.exists():
-        raise FileNotFoundError(f"Template HTML introuvable : {OUTPUT_TEMPLATE_HTML_PATH}")
+        raise FileNotFoundError(
+            f"Template HTML introuvable : {OUTPUT_TEMPLATE_HTML_PATH}"
+        )
 
     html = OUTPUT_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
 
-    date_value = stats_row[0] if len(stats_row) > 0 else datetime.now(timezone.utc).strftime("%Y%m%d")
+    date_value = (
+        stats_row[0]
+        if len(stats_row) > 0
+        else datetime.now(timezone.utc).strftime("%Y%m%d")
+    )
     try:
         parsed_date = datetime.strptime(date_value, "%Y%m%d")
         human_date = parsed_date.strftime("%A %d %B %Y")
-        human_date = human_date.replace("Monday", "Lundi").replace("Tuesday", "Mardi").replace("Wednesday", "Mercredi").replace("Thursday", "Jeudi").replace("Friday", "Vendredi").replace("Saturday", "Samedi").replace("Sunday", "Dimanche")
-        human_date = human_date.replace("January", "janvier").replace("February", "février").replace("March", "mars").replace("April", "avril").replace("May", "mai").replace("June", "juin").replace("July", "juillet").replace("August", "août").replace("September", "septembre").replace("October", "octobre").replace("November", "novembre").replace("December", "décembre")
+        human_date = (
+            human_date.replace("Monday", "Lundi")
+            .replace("Tuesday", "Mardi")
+            .replace("Wednesday", "Mercredi")
+            .replace("Thursday", "Jeudi")
+            .replace("Friday", "Vendredi")
+            .replace("Saturday", "Samedi")
+            .replace("Sunday", "Dimanche")
+        )
+        human_date = (
+            human_date.replace("January", "janvier")
+            .replace("February", "février")
+            .replace("March", "mars")
+            .replace("April", "avril")
+            .replace("May", "mai")
+            .replace("June", "juin")
+            .replace("July", "juillet")
+            .replace("August", "août")
+            .replace("September", "septembre")
+            .replace("October", "octobre")
+            .replace("November", "novembre")
+            .replace("December", "décembre")
+        )
     except ValueError:
         human_date = date_value
 
@@ -266,12 +397,14 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
     real_month = to_number(stats_row[6]) if len(stats_row) > 6 else 0.0
     percent_of_month_done = get_month_progress_days()
     try:
-        goal_today_month = month_goal * percent_of_month_done  / 100
+        goal_today_month = month_goal * percent_of_month_done / 100
     except Exception:
         goal_today_month = 0.0
 
     try:
-        percent_month_goal = (real_month / goal_today_month) * 100 - 100 if goal_today_month else 0.0
+        percent_month_goal = (
+            (real_month / goal_today_month) * 100 - 100 if goal_today_month else 0.0
+        )
     except Exception:
         percent_month_goal = 0.0
 
@@ -295,11 +428,15 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
 
     replacements = {
         "{{DATE_DAY}}": human_date,
-        "{{CA_DAY}}": str(ca_day) +" €" if len(stats_row) > 1 else "0",
-        "{{FRAIS_DAY}}": str(frais_day) +" €" if len(stats_row) > 2 else "0",
+        "{{CA_DAY}}": str(ca_day) + " €" if len(stats_row) > 1 else "0",
+        "{{FRAIS_DAY}}": str(frais_day) + " €" if len(stats_row) > 2 else "0",
         "{{REAL_DAY}}": str(real_day) if len(stats_row) > 3 else "0",
-        "{{GOAL_DAY}}": ("✅ +" if ca_day >= daily_goal else "❌ ") + str(round(percent_goal, 2)) + "%",
-        "{{CLASS_DAY_GOAL}}": " capsulesuccess " if ca_day >= daily_goal else " capsuleerror ",
+        "{{GOAL_DAY}}": ("✅ +" if ca_day >= daily_goal else "❌ ")
+        + str(round(percent_goal, 2))
+        + "%",
+        "{{CLASS_DAY_GOAL}}": " capsulesuccess "
+        if ca_day >= daily_goal
+        else " capsuleerror ",
         "{{DOUBLE_1}}": str(stats_row[10]) if len(stats_row) > 10 else "0",
         "{{DOUBLE_2}}": str(stats_row[11]) if len(stats_row) > 11 else "0",
         "{{SIMPLE}}": str(stats_row[12]) if len(stats_row) > 12 else "0",
@@ -308,13 +445,19 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
         "{{RESERVATIONS}}": str(stats_row[8]) if len(stats_row) > 8 else "0",
         "{{MATCHS_JOUES}}": str(stats_row[9]) if len(stats_row) > 9 else "0",
         "{{ANNULATIONS}}": str(stats_row[13]) if len(stats_row) > 13 else "0",
-        "{{DETAIL_ANNULATIONS}}": (stats_row[14] if len(stats_row) > 14 else "Aucun").replace("\n", "<br>"),
-        "{{COMPTES_CREES}}":  str(stats_row[7]) if len(stats_row) > 7 else "0",
-        "{{CA_MONTH}}": str(ca_month)+" €"  if len(stats_row) > 4 else "0",
-        "{{FRAIS_MONTH}}": str(frais_month)+" €" if len(stats_row) > 5 else "0",
-        "{{REAL_MONTH}}": str(real_month)+" €" if len(stats_row) > 6 else "0",
-        "{{GOAL_MONTH}}": ("✅ +" if percent_month_goal > 0 else "❌ ") + str(round(percent_month_goal, 2)) + "%",
-        "{{CLASS_MONTH_GOAL}}": " capsulesuccess " if percent_month_goal > 0 else " capsuleerror ",
+        "{{DETAIL_ANNULATIONS}}": (
+            stats_row[14] if len(stats_row) > 14 else "Aucun"
+        ).replace("\n", "<br>"),
+        "{{COMPTES_CREES}}": str(stats_row[7]) if len(stats_row) > 7 else "0",
+        "{{CA_MONTH}}": str(ca_month) + " €" if len(stats_row) > 4 else "0",
+        "{{FRAIS_MONTH}}": str(frais_month) + " €" if len(stats_row) > 5 else "0",
+        "{{REAL_MONTH}}": str(real_month) + " €" if len(stats_row) > 6 else "0",
+        "{{GOAL_MONTH}}": ("✅ +" if percent_month_goal > 0 else "❌ ")
+        + str(round(percent_month_goal, 2))
+        + "%",
+        "{{CLASS_MONTH_GOAL}}": " capsulesuccess "
+        if percent_month_goal > 0
+        else " capsuleerror ",
         "{{MONTH_TO_DATE}}": str(round(goal_today_month, 0)),
         "{{DAY_GOAL_STYLE}}": DAY_GOAL_STYLE,
         "{{DAY_GOAL_TITLE_STYLE}}": DAY_GOAL_TITLE_STYLE,
@@ -333,20 +476,30 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
 def save_daily_stats_html(stats_row: list[str]) -> None:
     try:
         html_body = build_daily_stats_email_html(stats_row)
-        date_value = stats_row[0] if len(stats_row) > 0 else datetime.now(timezone.utc).strftime("%Y%m%d")
-        output_html_path = Path(__file__).resolve().parents[1] / "results" / f"daily_result_{date_value}.html"
+        date_value = (
+            stats_row[0]
+            if len(stats_row) > 0
+            else datetime.now(timezone.utc).strftime("%Y%m%d")
+        )
+        output_html_path = (
+            Path(__file__).resolve().parents[1]
+            / "results"
+            / f"daily_result_{date_value}.html"
+        )
         output_html_path.write_text(html_body, encoding="utf-8")
         print(f"✅ HTML enregistré : {output_html_path}")
 
         with open(output_html_path, "r", encoding="utf-8") as f:
             html = f.read()
 
-        resend.Emails.send({
-            "from": "Banana_Stats@resend.dev",
-            "to": ["roc4invest@gmail.com"],
-            "subject": f"Banana Stats - Résumé du jour : {date_value}",
-            "html": html
-        })
+        resend.Emails.send(
+            {
+                "from": "Banana_Stats@resend.dev",
+                "to": ["roc4invest@gmail.com"],
+                "subject": f"Banana Stats - Résumé du jour : {date_value}",
+                "html": html,
+            }
+        )
 
     except Exception as exc:
         print(f"⚠️ Échec de la génération du fichier HTML : {exc}")
@@ -383,7 +536,9 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
                 continue
 
             matched = False
-            for label, header in sorted(headers, key=lambda item: item[1].location["x"]):
+            for label, header in sorted(
+                headers, key=lambda item: item[1].location["x"]
+            ):
                 try:
                     left = header.location["x"]
                     right = left + header.size["width"]
@@ -413,9 +568,17 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
             )
         ).lower()
 
-        if "double 2" in text or "double2" in text or ("double" in text and "2" in text):
+        if (
+            "double 2" in text
+            or "double2" in text
+            or ("double" in text and "2" in text)
+        ):
             counts["DOUBLE 2"] += 1
-        elif "double 1" in text or "double1" in text or ("double" in text and "1" in text):
+        elif (
+            "double 1" in text
+            or "double1" in text
+            or ("double" in text and "1" in text)
+        ):
             counts["DOUBLE 1"] += 1
         elif "simple" in text or "single" in text:
             counts["Simple"] += 1
@@ -423,11 +586,12 @@ def count_slots_by_resource_id(driver: webdriver.Chrome):
             counts["Simple"] += 1
 
     return counts
-    
+
 
 def main() -> None:
+
     log_step("Vérification des Variables d'Environnement")
-    
+
     def mask_secret(val: str) -> str:
         if not val:
             return "NON DÉFINI / VIDE"
@@ -436,9 +600,9 @@ def main() -> None:
             return f"'{val_clean[0]}*' (longueur: {len(val)})"
         return f"'{val_clean[0]}{'*' * (len(val_clean) - 2)}{val_clean[-1]}' (longueur brute: {len(val)}, nettoyée: {len(val_clean)})"
 
-    #print(f"  APP_LOG : {(LOGIN)}")
-    #print(f"  APP_PWD : {(PASSWORD)}")
-    
+    # print(f"  APP_LOG : {(LOGIN)}")
+    # print(f"  APP_PWD : {(PASSWORD)}")
+
     if not LOGIN or not PASSWORD:
         raise ValueError("❌ APP_LOG ou APP_PWD est manquant dans les secrets GitHub !")
 
@@ -448,31 +612,49 @@ def main() -> None:
         print(f"Naviguer vers : {URL}")
         driver.get(URL)
         print(f"📍 URL chargée : {driver.current_url}")
-        
+
         today = datetime.now(timezone.utc).strftime("%d/%m/%Y")
 
         log_step("Connexion au Formulaire")
-        
+
         # Nettoyage des éventuels espaces/sauts de ligne invisibles dans GitHub Secrets
         clean_login = LOGIN.strip()
         clean_pwd = PASSWORD.strip()
 
         login_input = WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='login'], input[name='mot_de_passe'], input[type='text'], input[type='email']"))
+            EC.element_to_be_clickable(
+                (
+                    By.CSS_SELECTOR,
+                    "input[name='login'], input[name='mot_de_passe'], input[type='text'], input[type='email']",
+                )
+            )
         )
         login_input.clear()
-        driver.execute_script("arguments[0].value = arguments[1];", login_input, clean_login)        
+        driver.execute_script(
+            "arguments[0].value = arguments[1];", login_input, clean_login
+        )
         print(f"✅ Identifiant injecté dans le champ (valeur injectée: {clean_login})")
 
-        pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='mot_de_passe'], input[name='password'], input[type='password']")
+        pwd_input = driver.find_element(
+            By.CSS_SELECTOR,
+            "input[name='mot_de_passe'], input[name='password'], input[type='password']",
+        )
         pwd_input.clear()
-        driver.execute_script("arguments[0].value = arguments[1];", pwd_input, clean_pwd)
+        driver.execute_script(
+            "arguments[0].value = arguments[1];", pwd_input, clean_pwd
+        )
         print(f"✅ Mot de passe injecté dans le champ (valeur injectée: {clean_pwd})")
 
-        val_login_check = driver.execute_script("return arguments[0].value;", login_input)
+        val_login_check = driver.execute_script(
+            "return arguments[0].value;", login_input
+        )
         val_pwd_check = driver.execute_script("return arguments[0].value;", pwd_input)
-        print(f"🔍 Valeur réelle dans le DOM (Login) : {val_login_check[:2]}*** (Minuscules respectées : {any(c.islower() for c in val_login_check)})")
-        print(f"🔍 Valeur réelle dans le DOM (PWD)   : {val_pwd_check[:1]}*** (Minuscules respectées : {any(c.islower() for c in val_pwd_check)})")
+        print(
+            f"🔍 Valeur réelle dans le DOM (Login) : {val_login_check[:2]}*** (Minuscules respectées : {any(c.islower() for c in val_login_check)})"
+        )
+        print(
+            f"🔍 Valeur réelle dans le DOM (PWD)   : {val_pwd_check[:1]}*** (Minuscules respectées : {any(c.islower() for c in val_pwd_check)})"
+        )
 
         # Soumission explicite du formulaire
         try:
@@ -491,15 +673,21 @@ def main() -> None:
             )
             print("✅ Loader #wait disparu.")
         except Exception:
-            print("⚠️ Le spinner #wait ne s'est pas masqué automatiquement. Masquage JS forcé.")
-            driver.execute_script("var w = document.getElementById('wait'); if(w) w.style.display='none';")
+            print(
+                "⚠️ Le spinner #wait ne s'est pas masqué automatiquement. Masquage JS forcé."
+            )
+            driver.execute_script(
+                "var w = document.getElementById('wait'); if(w) w.style.display='none';"
+            )
 
         print(f"📍 URL après tentative de login : {driver.current_url}")
 
         log_step("Validation du Dashboard & Navigation 'PAIEMENTS EN LIGNE'")
         try:
             menu_link = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]"))
+                EC.presence_of_element_located(
+                    (By.XPATH, "//*[contains(text(), 'PAIEMENTS EN LIGNE')]")
+                )
             )
             print("✅ Menu 'PAIEMENTS EN LIGNE' détecté !")
         except Exception as e:
@@ -509,7 +697,12 @@ def main() -> None:
 
         # Essayer de lire le nombre de créneaux joués du jour
         try:
-            wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'DOUBLE 1')]", timeout=10)
+            wait_for_element(
+                driver,
+                By.XPATH,
+                "//*[contains(normalize-space(.), 'DOUBLE 1')]",
+                timeout=10,
+            )
             slot_counts = count_slots_by_resource_id(driver)
             played_slots = sum(slot_counts.values())
             double1_slots = slot_counts["DOUBLE 1"]
@@ -540,42 +733,74 @@ def main() -> None:
             capture_debug_artifacts(driver, "nav_payments_failed")
             raise
 
-        wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
+        wait_for_element(
+            driver,
+            By.XPATH,
+            "//*[contains(normalize-space(.), 'Liste des paiements web')]",
+        )
         print("✅ Page 'Liste des paiements web' atteinte.")
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
-        texts: list[str] = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
+        texts: list[str] = [
+            row.get_attribute("innerText").strip() or row.text.strip()
+            for row in rows
+            if (row.get_attribute("innerText") or row.text or "").strip()
+        ]
 
         print("📊 Lignes 'Encaisse' Journée :", len(texts))
         for text in texts:
             print("  -> " + text)
 
-        total_paye = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
-        total_frais = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
-        total_club = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
+        total_paye = (
+            extract_numeric_value(texts[0].replace(" ", "")) if len(texts) > 0 else ""
+        )
+        total_frais = (
+            extract_numeric_value(texts[1].replace(" ", "")) if len(texts) > 1 else ""
+        )
+        total_club = (
+            extract_numeric_value(texts[2].replace(" ", "")) if len(texts) > 2 else ""
+        )
 
         log_step("Récupération du Récapitulatif Mensuel")
-        recap_button = wait_for_interactable(driver, By.XPATH, "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'récap mensuel')]")
+        recap_button = wait_for_interactable(
+            driver,
+            By.XPATH,
+            "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'récap mensuel')]",
+        )
         recap_button.click()
 
-        wait_for_element(driver, By.XPATH, "//*[contains(normalize-space(.), 'Liste des paiements web')]")
+        wait_for_element(
+            driver,
+            By.XPATH,
+            "//*[contains(normalize-space(.), 'Liste des paiements web')]",
+        )
 
         rows = driver.find_elements(By.ID, "tr_encaisse")
-        texts = [row.get_attribute("innerText").strip() or row.text.strip() for row in rows if (row.get_attribute("innerText") or row.text or "").strip()]
+        texts = [
+            row.get_attribute("innerText").strip() or row.text.strip()
+            for row in rows
+            if (row.get_attribute("innerText") or row.text or "").strip()
+        ]
 
         print("📊 Lignes 'Encaisse' Mois :", len(texts))
         for text in texts:
             print("  -> " + text)
 
-        total_paye_mois = extract_numeric_value(texts[0].replace(" ","")) if len(texts) > 0 else ""
-        total_frais_mois = extract_numeric_value(texts[1].replace(" ","")) if len(texts) > 1 else ""
-        total_club_mois = extract_numeric_value(texts[2].replace(" ","")) if len(texts) > 2 else ""
+        total_paye_mois = (
+            extract_numeric_value(texts[0].replace(" ", "")) if len(texts) > 0 else ""
+        )
+        total_frais_mois = (
+            extract_numeric_value(texts[1].replace(" ", "")) if len(texts) > 1 else ""
+        )
+        total_club_mois = (
+            extract_numeric_value(texts[2].replace(" ", "")) if len(texts) > 2 else ""
+        )
 
         log_step("Récupération des Badges (Inscriptions & Réservations)")
         try:
             inscrit_badge = driver.find_element(
                 By.XPATH,
-                "//i[@class='fa fa-user']/following-sibling::span[contains(@class, 'badge-warning')][1]"
+                "//i[@class='fa fa-user']/following-sibling::span[contains(@class, 'badge-warning')][1]",
             )
             inscriptions = inscrit_badge.get_attribute("innerText").strip() or "0"
         except Exception:
@@ -584,7 +809,7 @@ def main() -> None:
         try:
             reserved_badge = driver.find_element(
                 By.XPATH,
-                "//i[@class='fa fa-calendar']/following-sibling::span[contains(@class, 'badge-warning')][1]"
+                "//i[@class='fa fa-calendar']/following-sibling::span[contains(@class, 'badge-warning')][1]",
             )
             reservations = reserved_badge.get_attribute("innerText").strip() or "0"
         except Exception:
@@ -627,7 +852,9 @@ def main() -> None:
         if cancellation_details is None:
             cancellation_details = []
 
-        cancellation_count = len(cancellation_details) if cancellation_details is not None else 0
+        cancellation_count = (
+            len(cancellation_details) if cancellation_details is not None else 0
+        )
 
         stats_row = [
             str(datetime.now(timezone.utc).strftime("%Y%m%d")),
@@ -655,6 +882,7 @@ def main() -> None:
 
         log_step("Sauvegarde et Génération du Rapport Final")
         save_to_excel(stats_row)
+        save_to_google_sheet(stats_row)
         save_daily_stats_html(stats_row)
         print("🎉 TRAITEMENT TERMINÉ AVEC SUCCÈS !")
 
