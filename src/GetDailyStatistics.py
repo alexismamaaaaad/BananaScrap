@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import gspread
 import pandas as pd
@@ -31,6 +32,11 @@ load_dotenv()
 resend.api_key = os.getenv("RESEND_API_KEY")
 LOGIN = os.getenv("APP_LOG")
 PASSWORD = os.getenv("APP_PWD")
+LOCAL_TIMEZONE = ZoneInfo("Europe/Paris")
+
+
+def local_now() -> datetime:
+    return datetime.now(LOCAL_TIMEZONE)
 
 OUTPUT_XLSX_PATH = Path(__file__).resolve().parents[1] / "results" / "DailyStats.xlsx"
 OUTPUT_TEMPLATE_HTML_PATH = (
@@ -325,7 +331,7 @@ def extract_numeric_value(value: str):
 
 
 def get_month_progress_days() -> float:
-    today = datetime.now(timezone.utc)
+    today = local_now()
     total_days = calendar.monthrange(today.year, today.month)[1]
     return (today.day / total_days) * 100
 
@@ -341,7 +347,7 @@ def build_daily_stats_email_html(stats_row: list[str]) -> str:
     date_value = (
         stats_row[0]
         if len(stats_row) > 0
-        else datetime.now(timezone.utc).strftime("%Y%m%d")
+        else local_now().strftime("%Y%m%d")
     )
     try:
         parsed_date = datetime.strptime(date_value, "%Y%m%d")
@@ -479,7 +485,7 @@ def save_daily_stats_html(stats_row: list[str]) -> None:
         date_value = (
             stats_row[0]
             if len(stats_row) > 0
-            else datetime.now(timezone.utc).strftime("%Y%m%d")
+            else local_now().strftime("%Y%m%d")
         )
         output_html_path = (
             Path(__file__).resolve().parents[1]
@@ -857,7 +863,7 @@ def main() -> None:
         )
 
         stats_row = [
-            str(datetime.now(timezone.utc).strftime("%Y%m%d")),
+            str(local_now().strftime("%Y%m%d")),
             total_paye,
             total_frais,
             total_club,
